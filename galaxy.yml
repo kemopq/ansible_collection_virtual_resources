@@ -7,7 +7,7 @@
 namespace: kemopq
 
 # The name of the collection. Has the same character restrictions as 'namespace'
-name: hello_world
+name: virtual_resources
 
 # The version of the collection. Must be compatible with semantic versioning
 version: 1.0.0
@@ -24,7 +24,7 @@ authors:
 ### OPTIONAL but strongly recommended
 
 # A short summary description of the collection
-description: Just usual hello world application for learning
+description: Operations on virtual resources
 
 # Either a single license or a list of licenses for content inside of a collection. Ansible Galaxy currently only
 # accepts L(SPDX,https://spdx.org/licenses/) licenses. This key is mutually exclusive with 'license_file'
@@ -46,7 +46,7 @@ tags: []
 dependencies: {}
 
 # The URL of the originating SCM repository
-repository: https://github.com/kemopq/ansible_collection_hello_world.git
+repository: https://github.com/kemopq/ansible_collection_virtual_resources.git
 
 # The URL to any online docs
 #documentation: http://docs.example.com
