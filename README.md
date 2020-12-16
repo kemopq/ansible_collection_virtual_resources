@@ -1,0 +1,2 @@
+# ansible_collection_virtual_resources
+Operation functions on virtual resources
