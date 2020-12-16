@@ -1,0 +1,5 @@
+---
+- name: "import tasks {{ ciaction }}.yml"
+  import_tasks: "{{ ciaction }}.yml"
+  when: (ciaction == 'deploy') or
+        (ciaction == 'destroy')

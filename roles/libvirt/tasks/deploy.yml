@@ -1,0 +1,21 @@
+---
+############################################################
+#  tasks file for crating virt-resources
+############################################################
+
+- name: Install python lxml package
+  pip:
+    name:
+      - lxml
+
+- name: Import tasks volume_deploy.yml
+  import_tasks:
+    - volume_deploy.yml
+
+- name: Import tasks network_deploy.yml
+  import_tasks:
+    - network_deploy.yml
+
+- name: Import tasks vm_deploy.yml
+  import_tasks:
+    - vm_deploy.yml

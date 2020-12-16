@@ -1,0 +1,15 @@
+---
+############################################################
+#  tasks file for crating virt-resources
+############################################################
+- name: Import tasks volume_destroy.yml
+  import_tasks:
+    - volume_destroy.yml
+
+- name: Import tasks network_destroy.yml
+  import_tasks:
+    - network_destroy.yml
+
+- name: Import tasks vm_destroy.yml
+  import_tasks:
+    - vm_destroy.yml

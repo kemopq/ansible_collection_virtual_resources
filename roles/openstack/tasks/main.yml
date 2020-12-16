@@ -1,0 +1,14 @@
+---
+- name: Gather min facts about host
+  setup:
+    gather_subset:
+      - min
+
+- name: Display all variables/facts for a host
+  debug:
+    var: hostvars[inventory_hostname]
+  when: false
+
+- name: Display OSfamily of a host
+  debug:
+    msg: "OSfamily = {{ ansible_os_family }}"

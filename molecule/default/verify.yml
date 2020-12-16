@@ -1,0 +1,33 @@
+---
+# This is an example playbook to execute Ansible tests.
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Read status of /tmp/testfile.txt
+      stat:
+        path: "/tmp/testfile.txt"
+      register: stat_result
+
+    - name: Check if /tmp/testfile.txt exists
+      assert:
+        that: stat_result.stat.exists
+        fail_msg: "ERR - The file /tmp/testfile.txt does not exist"
+        success_msg: "OK - The file /tmp/testfile.txt exists"
+
+    - name: Read /tmp/testfile.txt from remote host
+      slurp:
+        src: /tmp/testfile.txt
+      register: file_content_slurp
+
+    - name: Check the content of file /tmp/testfile.txt
+      vars:
+        file_content: "{{ file_content_slurp['content'] | b64decode }}"
+      assert:
+        that:
+          - file_content is match("SIGN:")
+          - file_content is search("Hello World from kemopq/hello_world collection")
+        fail_msg: "ERR - Content of the file /tmp/testfile.txt is incorrect ({{ file_content }})"
+        success_msg: "OK - The content of the file is correct"

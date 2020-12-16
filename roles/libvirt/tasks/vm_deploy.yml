@@ -1,0 +1,108 @@
+---
+############################################################
+#  tasks file for creating virtual machine
+############################################################
+- name: Check if image already exists on target folder
+  stat:
+    path: "{{ vol_pool.path }}/vm_faikolla.qcow2"
+  register: imageonplace
+
+- name: Copy fai-kolla image to os-volume pool
+  command: cp "{{  vm_faikolla.image }}" "{{ vol_pool.path }}/vm_faikolla.qcow2"
+  when: (not imageonplace.stat.exists)
+
+- name: Refresh storage pool list
+  command: virsh pool-refresh "{{ vol_pool.name }}"
+  when: (not imageonplace.stat.exists)
+
+- name: List vms
+  virt:
+    command: list_vms
+  register: vmlist
+
+- name: Create vm fai-kolla
+  vars:
+    server_name: "{{ vm_faikolla.name }}"
+    server_memory_usage: "{{ vm_faikolla.memory }}"
+    server_cpu_usage: "{{ vm_faikolla.vcpu }}"
+    server_image: "{{ vol_pool.path }}/vm_faikolla.qcow2"
+    interface_public_type: '{% if vm_repo is defined %}
+                                network
+                            {% else %}
+                                bridge
+                            {% endif %}'
+    interface_public_net: '{% if vm_repo is defined %}
+                               {{ net_faikolla_ext.name }}
+                           {% else %}
+                               {{ vm_faikolla.ext_bridge }}
+                           {% endif %}'
+    interface_internal_net: "{{ net_internal.name }}"
+  virt:
+    name: "{{ vm_faikolla.name }}"
+    command: define
+    xml: "{{ lookup('template', 'vm-virtlib.xml.j2') }}"
+  when: (vm_faikolla.name not in vmlist.list_vms)
+
+- name: Set root password, disable cloud init, inject public ssh key to fai-kolla, enable ssh server, set hostname
+  command: virt-customize -q -d "{{ vm_faikolla.name }}"
+                          --root-password password:iskratel
+                          --uninstall cloud-init
+                          --ssh-inject "root:file:{{ ssh_my_pub_key }}"
+                          --append-line '/etc/ssh/sshd_config:PermitRootLogin yes'
+                          --run-command "dpkg-reconfigure openssh-server"
+                          --run-command "systemctl enable ssh.service"
+                          --hostname fai-kolla-srv
+  become: true
+  when: (vm_faikolla.name not in vmlist.list_vms)
+
+- name: Resize volume
+  command: qemu-img resize "{{ vol_pool.path }}/vm_faikolla.qcow2" "{{ vm_faikolla.vol_size }}"
+  become: true
+  when: (vm_faikolla.name not in vmlist.list_vms)
+
+- name: Create netplan file
+  become: true
+  vars:
+    net_external_address: '{% if vm_repo is defined %}
+                               {{ net_faikolla_ext.network_cidr | ipaddr(5) }}
+                           {% else %}
+                               {{ vm_faikolla.pub_cidr }}
+                           {% endif %}'
+    net_external_gateway: '{% if vm_repo is defined %}
+                               {{ net_faikolla_ext.network_cidr | ipaddr(1) | ipaddr("address") }}
+                           {% else %}
+                               {{ vm_faikolla.pub_gateway }}
+                           {% endif %}'
+    net_internal_address: "{{ net_internal.network_cidr | ipaddr(5) }}"
+  template:
+    src: "vm-netplan.j2"
+    dest: /tmp/50-cloud-init.yaml
+    owner: root
+    group: root
+    mode: 0644
+  when: (vm_faikolla.name not in vmlist.list_vms)
+
+- name: Copy netplan file to faikolla server
+  become: true
+  command: virt-copy-in -d "{{ vm_faikolla.name }}" /tmp/50-cloud-init.yaml /etc/netplan
+  when: (vm_faikolla.name not in vmlist.list_vms)
+
+- name: Remove tmp file
+  become: true
+  file:
+    path: /tmp/50-cloud-init.yaml
+    state: absent
+  when: (vm_faikolla.name not in vmlist.list_vms)
+
+- name: Insert faikolla server to /etc/hosts
+  lineinfile:
+    path: "/etc/hosts"
+    regexp: "{{ vm_faikolla.name }}"
+    line: "{{ net_internal.network_cidr | ipaddr(5)  | ipaddr('address') }} {{ vm_faikolla.name }}"
+  become: true
+
+- name: Run vm fai-kolla
+  virt:
+    name: "{{ vm_faikolla.name }}"
+    command: start
+  when: (vm_faikolla.name not in vmlist.list_vms)

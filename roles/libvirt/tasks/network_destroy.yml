@@ -1,0 +1,138 @@
+---
+############################################################
+#  tasks file for destroying virt-resources
+############################################################
+- name: List virtual networks
+  virt_net:
+    command: list_nets
+    name: unknown
+  register: netlist
+
+- name: Disconnect fai-kolla net and external net
+  shell: |
+    iptables -D FORWARD -i "br-{{ net_faikolla_ext.name[:10] }}" -o "br-{{ net_external.name[:10] }}" -j ACCEPT
+    iptables -D FORWARD -i "br-{{ net_external.name[:10] }}" -o "br-{{ net_faikolla_ext.name[:10] }}" -j ACCEPT
+  become: true
+  when: (vm_repo is defined) and
+        (net_faikolla_ext.name in netlist.list_nets)
+  ignore_errors: 'yes'
+
+- name: Disconnect repo net and fai-kolla net
+  shell: |
+    iptables -D FORWARD -i "br-{{ net_repo_ext.name[:10] }}" -o "br-{{ net_faikolla_ext.name[:10] }}" -j ACCEPT
+    iptables -D FORWARD -i "br-{{ net_faikolla_ext.name[:10] }}" -o "br-{{ net_repo_ext.name[:10] }}" -j ACCEPT
+  become: true
+  when: (vm_repo is defined) and
+        (net_repo_ext.name in netlist.list_nets)
+  ignore_errors: 'yes'
+
+- name: Disconnect repo net and external net
+  shell: |
+    iptables -D FORWARD -i "br-{{ net_repo_ext.name[:10] }}" -o "br-{{ net_external.name[:10] }}" -j ACCEPT
+    iptables -D FORWARD -i "br-{{ net_external.name[:10] }}" -o "br-{{ net_repo_ext.name[:10] }}" -j ACCEPT
+  become: true
+  when: (vm_repo is defined) and
+        (net_repo_ext.name in netlist.list_nets)
+  ignore_errors: 'yes'
+
+- name: Stop provider net
+  virt_net:
+    command: destroy
+    name: "{{ net_provider.name }}"
+  when: net_provider.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Remove provider net
+  virt_net:
+    command: undefine
+    name: "{{ net_provider.name }}"
+  when: net_provider.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Stop tunnel net
+  virt_net:
+    command: destroy
+    name: "{{ net_tunnel.name }}"
+  when: net_tunnel.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Remove tunnel net
+  virt_net:
+    command: undefine
+    name: "{{ net_tunnel.name }}"
+  when: net_tunnel.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Stop storage net
+  virt_net:
+    command: destroy
+    name: "{{ net_storage.name }}"
+  when: net_storage.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Remove storage net
+  virt_net:
+    command: undefine
+    name: "{{ net_storage.name }}"
+  when: net_storage.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Stop internal net
+  virt_net:
+    command: destroy
+    name: "{{ net_internal.name }}"
+  when: net_internal.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Remove internal net
+  virt_net:
+    command: undefine
+    name: "{{ net_internal.name }}"
+  when: net_internal.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Stop external net
+  virt_net:
+    name: "{{ net_external.name }}"
+    command: destroy
+  when: net_external.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Remove external net
+  virt_net:
+    command: undefine
+    name: "{{ net_external.name }}"
+  when: net_external.name in netlist.list_nets
+  ignore_errors: 'yes'
+
+- name: Stop faikolla net
+  virt_net:
+    name: "{{ net_faikolla_ext.name }}"
+    command: destroy
+  when: (vm_repo is defined) and
+        (net_faikolla_ext.name in netlist.list_nets)
+  ignore_errors: 'yes'
+
+- name: Remove faikolla net
+  virt_net:
+    command: undefine
+    name: "{{ net_faikolla_ext.name }}"
+  when: (vm_repo is defined) and
+        (net_faikolla_ext.name in netlist.list_nets)
+  ignore_errors: 'yes'
+
+- name: Stop repo net
+  virt_net:
+    name: "{{ net_repo_ext.name }}"
+    command: destroy
+  when: (vm_repo is defined) and
+        (net_repo_ext.name in netlist.list_nets)
+  ignore_errors: 'yes'
+
+- name: Remove repo net
+  virt_net:
+    command: undefine
+    name: "{{ net_repo_ext.name }}"
+  when: (vm_repo is defined) and
+        (net_repo_ext.name in netlist.list_nets)
+  ignore_errors: 'yes'

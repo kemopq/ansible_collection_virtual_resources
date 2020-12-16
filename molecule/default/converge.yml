@@ -1,0 +1,26 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: no
+
+  collections:
+    - kemopq.hello_world
+
+  tasks:
+    - name: "Include hello_world role"
+      include_role:
+        name: "hello_world_role"
+
+    - name: "Include print_facts role"
+      include_role:
+        name: "print_facts_role"
+
+    - name: "Add sign to file /tmp/testfile.txt"
+      kemopq.hello_world.signfile:
+          name: Kemo
+          path: "/tmp/testfile.txt"
+      register: signfile_result
+
+    - name: DEBUG print signfile result
+      debug:
+        msg: "Changed={{ signfile_result.changed }} Stat={{ signfile_result.stat }} Path={{ signfile_result.path }}"
