@@ -1,0 +1,22 @@
+# static configuration
+network:
+  version: 2
+  ethernets:
+    ens3:
+      dhcp4: no
+      addresses: ["{{ net_external_address }}"]
+      gateway4: "{{ net_external_gateway }}"
+      nameservers:
+{% if cloud.domain_name is defined %}
+        search: ["{{ cloud.domain_name }}"]
+        addresses: ["{{ net_external_gateway }}"]
+{% else %}
+        search: [iskratel.si]
+        addresses: ["{{ vm_faikolla.nameserver }}"]
+{% endif %}
+{% if net_internal_address is defined %}
+    ens4:
+      dhcp4: no
+      addresses: ["{{ net_internal_address }}"]
+{% endif %}
+

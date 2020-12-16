@@ -1,0 +1,86 @@
+<domain type='kvm'>
+  <name>{{server_name}}</name>
+  <memory unit='MiB'>{{server_memory_usage}}</memory>
+  <vcpu placement='static'>{{server_cpu_usage}}</vcpu>
+  <os>
+    <type arch='x86_64'>hvm</type>
+{% if (uefi_loader is defined) and (uefi_loader != '')%}
+    {{ uefi_loader }}
+    {{ uefi_nvram }}
+{% endif %}
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <cpu mode='host-model' check='partial'>
+    <model fallback='allow'/>
+  </cpu>
+  <clock offset='utc'>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <devices>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='{{server_image}}'/>
+      <target dev='vda' bus='virtio'/>
+      <boot order='1'/>
+    </disk>
+{% if server_add_volume is defined %}
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='{{server_add_volume}}'/>
+      <target dev='vdb' bus='virtio'/>
+    </disk>
+{% endif %}
+{% if (server_add_volume2 is defined) and (server_add_volume2 != "None") %}
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='{{server_add_volume2}}'/>
+      <target dev='vdc' bus='virtio'/>
+    </disk>
+{% endif %}
+{% if server_mount_volume is defined %}
+    <filesystem type='mount' accessmode='mapped'>
+      <source dir='{{ server_mount_volume }}'/>
+      <target dir='/vmshare'/>
+    </filesystem>
+{% endif %}
+    <interface type='{{interface_public_type}}'>
+      <source {{interface_public_type}}='{{interface_public_net}}'/>
+      <model type='virtio'/>
+    </interface>
+{% if interface_internal_net is defined %}
+    <interface type='network'>
+      <source network='{{interface_internal_net}}'/>
+      <model type='virtio'/>
+    ¦ <boot order='2'/>
+    </interface>
+{% endif %}
+{% if interface_storage_net is defined %}
+    <interface type='network'>
+      <source network='{{interface_storage_net}}'/>
+      <model type='virtio'/>
+    </interface>
+{% endif %}
+{% if interface_tunnel_net is defined %}
+    <interface type='network'>
+      <source network='{{interface_tunnel_net}}'/>
+      <model type='virtio'/>
+    </interface>
+{% endif %}
+{% if interface_provider_net is defined %}
+    <interface type='network'>
+      <source network='{{interface_provider_net}}'/>
+      <model type='virtio'/>
+    </interface>
+{% endif %}
+    <console type='pty'>
+      <target type='serial'/>
+    </console>
+    <graphics type='spice' port='-1' autoport='yes'/> 
+  </devices>
+</domain>
+
