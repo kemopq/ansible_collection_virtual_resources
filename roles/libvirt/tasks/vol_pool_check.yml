@@ -1,0 +1,21 @@
+---
+############################################################
+#  tasks file for checking virtual storage pool
+############################################################
+- name: Check if folder already exists
+  stat:
+    path: "{{ vol_pool.path }}"
+  register: folderonplace
+
+- name: Print folder status
+  debug:
+    msg: "Folder {{ vol_pool.path }} exists status = {{ folderonplace.stat.exists }}"
+
+- name: List virtual storage pools
+  virt_pool:
+    command: list_pools
+  register: poollist
+
+- name: Print virtual storage pools
+  debug:
+    msg: "{{ poollist.list_pools }}"

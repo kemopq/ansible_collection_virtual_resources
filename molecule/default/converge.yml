@@ -8,5 +8,5 @@
 
   tasks:
     - name: "Include virtual_resources role"
-      include_role:
-        name: "virtual_resources"
+      import_role:
+        name: libvirt

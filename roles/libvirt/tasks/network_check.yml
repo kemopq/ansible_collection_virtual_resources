@@ -1,0 +1,39 @@
+---
+############################################################
+#  tasks file for checking virtual networks
+############################################################
+- name: List virtual networks
+  virt_net:
+    command: list_nets
+    name: unknown
+  register: netlist
+
+- name: Print active virtual networks
+  debug:
+    var: netlist.list_nets
+
+- name: Print input param virt_networks
+  debug:
+    var: virt_networks
+
+- name: Print input param virt_rools
+  debug:
+    var: routing_rools
+  when: routing_rools is defined
+
+- name: Check if routing_rools is defined, but is empty
+  assert:
+    that:
+      - (routing_rools is not defined) or ((routing_rools is defined) and routing_rools)
+    fail_msg: "routing_rools variable is defined, but it's empty"
+    quiet: 'yes'
+
+- name: Check if virtual networks for routing are defined in virt_networks variable
+  assert:
+    that:
+      - virt_networks[item.value.net1] is defined
+      - virt_networks[item.value.net2] is defined
+    fail_msg: "{{ item.value.net1 }} or/and {{ item.value.net2 }} are not defined in virt_networks variable"
+    quiet: 'yes'
+  loop: "{{ routing_rools | dict2items }}"
+  when: routing_rools is defined

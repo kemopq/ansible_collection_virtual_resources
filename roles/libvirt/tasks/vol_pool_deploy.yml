@@ -1,11 +1,9 @@
 ---
 ############################################################
-#  tasks file for crating virtual storages
+#  tasks file for crating virtual storage pool
 ############################################################
-- name: Check if folder already exists
-  stat:
-    path: "{{ vol_pool.path }}"
-  register: folderonplace
+- name: Import vol_pool_check.yml
+  import_tasks: 'vol_pool_check.yml'
 
 - name: Create virt-volumes folder
   file:
@@ -19,11 +17,6 @@
   pause:
     seconds: 2
   when: (not folderonplace.stat.exists)
-
-- name: List virtual storage pools
-  virt_pool:
-    command: list_pools
-  register: poollist
 
 - name: Create virt-volumes pool
   virt_pool:

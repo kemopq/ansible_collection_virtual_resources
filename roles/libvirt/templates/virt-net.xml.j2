@@ -4,7 +4,7 @@
   {% if cloud.domain_name is defined %}
   <domain name="{{ cloud.domain_name }}" localOnly="yes"/>
   {% endif %}
-  {% if include_nat_section is defined and (include_nat_section == "yes") %}
+  {% if net_mode == "nat" %}
   <forward mode='nat'>
     <nat>
     ¦ <port start='1024' end='65535'/>

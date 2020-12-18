@@ -1,0 +1,69 @@
+---
+# main variables
+mkaction: 'unknown'   # can be deploy,destroy
+
+# volume pool default variables
+vol_pool:
+  name: 'virt-volumes'
+  path: '/tmp/virt-volumes'
+
+# network default variables
+virt_networks:
+  os_external:
+    network_cidr: '192.168.100.0/24'
+    mode: 'nat'                       # can be 'isolated', 'nat'
+  os_internal:
+    network_cidr: '192.168.110.0/24'
+    mode: 'isolated'                       # can be 'isolated', 'nat'
+  os_storage:
+    network_cidr: '192.168.120.0/24'
+    mode: 'isolated'                       # can be 'isolated', 'nat'
+  os_tunnel:
+    network_cidr: '192.168.130.0/24'
+    mode: 'isolated'                       # can be 'isolated', 'nat'
+  os_provider:
+    network_cidr: '192.168.140.0/24'
+    mode: 'isolated'                       # can be 'isolated', 'nat'
+
+routing_rools:
+  internal_to_storage:
+    net1: 'os_internal'
+    net2: 'os_storage'
+  internal_to_provider:
+    net1: 'os_internal'
+    net2: 'os_provider'
+
+# virtual machines default variables
+virt_machines:
+  vm_faikolla:
+    name: 'fai-kolla-srv'
+    nr_of_nodes: 1
+    memory: 2048
+    vcpu: 1
+    volumes:
+      boot:
+        boot_mode: 'image'    # can be image, PXE or UEFI
+        size: '50G'
+        image: '/home/kpog/WORK/downloads/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2'
+    networks:
+      public:
+        type: 'bridge'
+        pub_cidr: '172.30.21.43/22'
+        pub_gateway: '172.30.20.1'
+        nameserver: '10.1.2.3'
+        ext_bridge: 'br-main'
+
+  vm_osnodes:
+    name: vmcloud
+    nr_of_nodes: 1
+    memory: 16384
+    vcpu: 2
+    volumes:
+      boot:
+        boot_mode: 'uefi'
+        vol_size: '200G'
+      ceph:
+        vol_size: '50G'
+    networks:
+      net_provider:
+        type: 'network'

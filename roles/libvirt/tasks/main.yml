@@ -1,5 +1,10 @@
 ---
-- name: "import tasks {{ ciaction }}.yml"
-  import_tasks: "{{ ciaction }}.yml"
-  when: (ciaction == 'deploy') or
-        (ciaction == 'destroy')
+- name: "Check mkaction"
+  assert:
+    that:
+      - (mkaction == 'deploy') or (mkaction == 'destroy')
+    fail_msg: "Wrong value of mkaction variable = {{ mkaction }}"
+    quiet: 'yes'
+
+- name: "include tasks {{ mkaction }}.yml"
+  include_tasks: "{{ mkaction }}.yml"

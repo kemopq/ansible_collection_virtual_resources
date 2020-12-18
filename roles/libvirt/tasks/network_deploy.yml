@@ -1,194 +1,66 @@
 ---
 ############################################################
-#  tasks file for crating virt-resources
+#  tasks file for crating virtual networks
 ############################################################
-- name: List virtual networks
+- name: Import network_check.yml
+  import_tasks: 'network_check.yml'
+
+- name: Create virtual networks
+  vars:
+    net_name: "{{ item.key }}"
+    net_cidr: "{{ item.value.network_cidr }}"
+    net_mode: "{{ item.value.mode }}"
+  virt_net:
+    command: define
+    name: "{{ item.key }}"
+    xml: "{{ lookup('template', 'virt-net.xml.j2') }}"
+  when: item.key not in netlist.list_nets
+  loop: "{{ virt_networks | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Virtual networks will be started at boot
+  virt_net:
+    autostart: 'yes'
+    name: "{{ item.key }}"
+  when: item.key not in netlist.list_nets
+  loop: "{{ virt_networks | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+
+- name: Run virtual networks
+  virt_net:
+    command: create
+    name: "{{ item.key }}"
+  when: item.key not in netlist.list_nets
+  loop: "{{ virt_networks | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: List virtual networks after creation
   virt_net:
     command: list_nets
     name: unknown
   register: netlist
 
-- name: Create repo net
-  vars:
-    net_name: "{{ net_repo_ext.name }}"
-    net_cidr: "{{ net_repo_ext.network_cidr }}"
-  virt_net:
-    command: define
-    name: "{{ net_repo_ext.name }}"
-    xml: "{{ lookup('template', 'net-os-other.xml.j2') }}"
-  when: (vm_repo is defined) and
-        (net_repo_ext.name not in netlist.list_nets)
+- name: Print active virtual networks after creation
+  debug:
+    var: netlist.list_nets
 
-- name: Repo net will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ net_repo_ext.name }}"
-  when: (vm_repo is defined) and
-        (net_repo_ext.name not in netlist.list_nets)
+- name: Enable routing block
+  block:
 
-- name: Run repo net
-  virt_net:
-    command: create
-    name: "{{ net_repo_ext.name }}"
-  when: (vm_repo is defined) and
-        (net_repo_ext.name not in netlist.list_nets)
+    - name: Enabling routing between two virtual networks
+      vars:
+        net1_name: "{{ item.value.net1 }}"
+        net2_name: "{{ item.value.net2 }}"
+      shell: |
+        iptables -I FORWARD 1 -i "br-{{ net1_name[:10] }}" -o "br-{{ net2_name[:10] }}" -j ACCEPT
+        iptables -I FORWARD 1 -i "br-{{ net2_name[:10] }}" -o "br-{{ net1_name[:10] }}" -j ACCEPT
+      become: true
+      when: (net1_name in netlist.list_nets) and
+            (net2_name in netlist.list_nets)
+      loop: "{{ routing_rools | dict2items }}"
 
-- name: Create faikolla net
-  vars:
-    net_name: "{{ net_faikolla_ext.name }}"
-    net_cidr: "{{ net_faikolla_ext.network_cidr }}"
-  virt_net:
-    command: define
-    name: "{{ net_faikolla_ext.name }}"
-    xml: "{{ lookup('template', 'net-os-other.xml.j2') }}"
-  when: (vm_repo is defined) and
-        (net_faikolla_ext.name not in netlist.list_nets)
-
-- name: Faikolla net will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ net_faikolla_ext.name }}"
-  when: (vm_repo is defined) and
-        (net_faikolla_ext.name not in netlist.list_nets)
-
-- name: Run faikolla net
-  virt_net:
-    command: create
-    name: "{{ net_faikolla_ext.name }}"
-  when: (vm_repo is defined) and
-        (net_faikolla_ext.name not in netlist.list_nets)
-
-- name: Create external net
-  vars:
-    net_name: "{{ net_external.name }}"
-    net_cidr: "{{ net_external.network_cidr }}"
-    include_nat_section: "{% if vm_repo is defined %}no{% else %}yes{% endif %}"
-  virt_net:
-    command: define
-    name: "{{ net_external.name }}"
-    xml: "{{ lookup('template', 'net-os-other.xml.j2') }}"
-  when: (net_external.name not in netlist.list_nets)
-
-- name: External net will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ net_external.name }}"
-  when: (net_external.name not in netlist.list_nets)
-
-- name: Run external net
-  virt_net:
-    command: create
-    name: "{{ net_external.name }}"
-  when: (net_external.name not in netlist.list_nets)
-
-- name: Create internal net
-  vars:
-    net_name: "{{ net_internal.name }}"
-    net_cidr: "{{ net_internal.network_cidr }}"
-  virt_net:
-    command: define
-    name: "{{ net_internal.name }}"
-    xml: "{{ lookup('template', 'net-os-other.xml.j2') }}"
-  when: (net_internal.name not in netlist.list_nets)
-
-- name: Internal net will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ net_internal.name }}"
-  when: (net_internal.name not in netlist.list_nets)
-
-- name: Run internal net
-  virt_net:
-    command: create
-    name: "{{ net_internal.name }}"
-  when: (net_internal.name not in netlist.list_nets)
-
-- name: Create storage net
-  vars:
-    net_name: "{{ net_storage.name }}"
-    net_cidr: "{{ net_storage.network_cidr }}"
-  virt_net:
-    command: define
-    name: "{{ net_storage.name }}"
-    xml: "{{ lookup('template', 'net-os-other.xml.j2') }}"
-  when: (net_storage.name not in netlist.list_nets)
-
-- name: Storage net will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ net_storage.name }}"
-  when: (net_storage.name not in netlist.list_nets)
-
-- name: Run storage net
-  virt_net:
-    command: create
-    name: "{{ net_storage.name }}"
-  when: (net_storage.name not in netlist.list_nets)
-
-- name: Create tunnel net
-  vars:
-    net_name: "{{ net_tunnel.name }}"
-    net_cidr: "{{ net_tunnel.network_cidr }}"
-  virt_net:
-    command: define
-    name: "{{ net_tunnel.name }}"
-    xml: "{{ lookup('template', 'net-os-other.xml.j2') }}"
-  when: (net_tunnel.name not in netlist.list_nets)
-
-- name: Tunnel net will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ net_tunnel.name }}"
-  when: (net_tunnel.name not in netlist.list_nets)
-
-- name: Run tunnel net
-  virt_net:
-    command: create
-    name: "{{ net_tunnel.name }}"
-  when: (net_tunnel.name not in netlist.list_nets)
-
-- name: Create provider net
-  vars:
-    net_name: "{{ net_provider.name }}"
-    net_cidr: "{{ net_provider.network_cidr }}"
-  virt_net:
-    command: define
-    name: "{{ net_provider.name }}"
-    xml: "{{ lookup('template', 'net-os-other.xml.j2') }}"
-  when: (net_provider.name not in netlist.list_nets)
-
-- name: Provider net will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ net_provider.name }}"
-  when: (net_provider.name not in netlist.list_nets)
-
-- name: Run provider net
-  virt_net:
-    command: create
-    name: "{{ net_provider.name }}"
-  when: (net_provider.name not in netlist.list_nets)
-
-- name: Connect fai-kolla net and external net
-  shell: |
-    iptables -I FORWARD 1 -i "br-{{ net_faikolla_ext.name[:10] }}" -o "br-{{ net_external.name[:10] }}" -j ACCEPT
-    iptables -I FORWARD 1 -i "br-{{ net_external.name[:10] }}" -o "br-{{ net_faikolla_ext.name[:10] }}" -j ACCEPT
-  become: true
-  when: (vm_repo is defined) and
-        (net_faikolla_ext.name not in netlist.list_nets)
-
-- name: Connect repo net and fai-kolla net
-  shell: |
-    iptables -I FORWARD 1 -i "br-{{ net_repo_ext.name[:10] }}" -o "br-{{ net_faikolla_ext.name[:10] }}" -j ACCEPT
-    iptables -I FORWARD 1 -i "br-{{ net_faikolla_ext.name[:10] }}" -o "br-{{ net_repo_ext.name[:10] }}" -j ACCEPT
-  become: true
-  when: (vm_repo is defined) and
-        (net_repo_ext.name not in netlist.list_nets)
-
-- name: Connect repo net and external net
-  shell: |
-    iptables -I FORWARD 1 -i "br-{{ net_repo_ext.name[:10] }}" -o "br-{{ net_external.name[:10] }}" -j ACCEPT
-    iptables -I FORWARD 1 -i "br-{{ net_external.name[:10] }}" -o "br-{{ net_repo_ext.name[:10] }}" -j ACCEPT
-  become: true
-  when: (vm_repo is defined) and
-        (net_repo_ext.name not in netlist.list_nets)
+  when: routing_rools is defined

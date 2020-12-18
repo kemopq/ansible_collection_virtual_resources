@@ -1,138 +1,43 @@
 ---
 ############################################################
-#  tasks file for destroying virt-resources
+#  tasks file for destroying virtual networks
 ############################################################
-- name: List virtual networks
-  virt_net:
-    command: list_nets
-    name: unknown
-  register: netlist
+- name: Import network_check.yml
+  import_tasks: 'network_check.yml'
 
-- name: Disconnect fai-kolla net and external net
-  shell: |
-    iptables -D FORWARD -i "br-{{ net_faikolla_ext.name[:10] }}" -o "br-{{ net_external.name[:10] }}" -j ACCEPT
-    iptables -D FORWARD -i "br-{{ net_external.name[:10] }}" -o "br-{{ net_faikolla_ext.name[:10] }}" -j ACCEPT
-  become: true
-  when: (vm_repo is defined) and
-        (net_faikolla_ext.name in netlist.list_nets)
-  ignore_errors: 'yes'
+- name: Disable routing block
+  block:
 
-- name: Disconnect repo net and fai-kolla net
-  shell: |
-    iptables -D FORWARD -i "br-{{ net_repo_ext.name[:10] }}" -o "br-{{ net_faikolla_ext.name[:10] }}" -j ACCEPT
-    iptables -D FORWARD -i "br-{{ net_faikolla_ext.name[:10] }}" -o "br-{{ net_repo_ext.name[:10] }}" -j ACCEPT
-  become: true
-  when: (vm_repo is defined) and
-        (net_repo_ext.name in netlist.list_nets)
-  ignore_errors: 'yes'
+    - name: Disable routing between two virtual networks
+      vars:
+        net1_name: "{{ item.value.net1 }}"
+        net2_name: "{{ item.value.net2 }}"
+      shell: |
+        iptables -I FORWARD -i "br-{{ net1_name[:10] }}" -o "br-{{ net2_name[:10] }}" -j ACCEPT
+        iptables -I FORWARD -i "br-{{ net2_name[:10] }}" -o "br-{{ net1_name[:10] }}" -j ACCEPT
+      become: true
+      when: (net1_name in netlist.list_nets) and
+            (net2_name in netlist.list_nets)
+      loop: "{{ routing_rools | dict2items }}"
 
-- name: Disconnect repo net and external net
-  shell: |
-    iptables -D FORWARD -i "br-{{ net_repo_ext.name[:10] }}" -o "br-{{ net_external.name[:10] }}" -j ACCEPT
-    iptables -D FORWARD -i "br-{{ net_external.name[:10] }}" -o "br-{{ net_repo_ext.name[:10] }}" -j ACCEPT
-  become: true
-  when: (vm_repo is defined) and
-        (net_repo_ext.name in netlist.list_nets)
-  ignore_errors: 'yes'
+  when: routing_rools is defined
 
-- name: Stop provider net
+- name: Stop virtual network
   virt_net:
     command: destroy
-    name: "{{ net_provider.name }}"
-  when: net_provider.name in netlist.list_nets
+    name: "{{ item.key }}"
+  when: item.key in netlist.list_nets
   ignore_errors: 'yes'
+  loop: "{{ virt_networks | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
 
-- name: Remove provider net
+- name: Remove virtual network
   virt_net:
     command: undefine
-    name: "{{ net_provider.name }}"
-  when: net_provider.name in netlist.list_nets
+    name: "{{ item.key }}"
+  when: item.key in netlist.list_nets
   ignore_errors: 'yes'
-
-- name: Stop tunnel net
-  virt_net:
-    command: destroy
-    name: "{{ net_tunnel.name }}"
-  when: net_tunnel.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Remove tunnel net
-  virt_net:
-    command: undefine
-    name: "{{ net_tunnel.name }}"
-  when: net_tunnel.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Stop storage net
-  virt_net:
-    command: destroy
-    name: "{{ net_storage.name }}"
-  when: net_storage.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Remove storage net
-  virt_net:
-    command: undefine
-    name: "{{ net_storage.name }}"
-  when: net_storage.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Stop internal net
-  virt_net:
-    command: destroy
-    name: "{{ net_internal.name }}"
-  when: net_internal.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Remove internal net
-  virt_net:
-    command: undefine
-    name: "{{ net_internal.name }}"
-  when: net_internal.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Stop external net
-  virt_net:
-    name: "{{ net_external.name }}"
-    command: destroy
-  when: net_external.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Remove external net
-  virt_net:
-    command: undefine
-    name: "{{ net_external.name }}"
-  when: net_external.name in netlist.list_nets
-  ignore_errors: 'yes'
-
-- name: Stop faikolla net
-  virt_net:
-    name: "{{ net_faikolla_ext.name }}"
-    command: destroy
-  when: (vm_repo is defined) and
-        (net_faikolla_ext.name in netlist.list_nets)
-  ignore_errors: 'yes'
-
-- name: Remove faikolla net
-  virt_net:
-    command: undefine
-    name: "{{ net_faikolla_ext.name }}"
-  when: (vm_repo is defined) and
-        (net_faikolla_ext.name in netlist.list_nets)
-  ignore_errors: 'yes'
-
-- name: Stop repo net
-  virt_net:
-    name: "{{ net_repo_ext.name }}"
-    command: destroy
-  when: (vm_repo is defined) and
-        (net_repo_ext.name in netlist.list_nets)
-  ignore_errors: 'yes'
-
-- name: Remove repo net
-  virt_net:
-    command: undefine
-    name: "{{ net_repo_ext.name }}"
-  when: (vm_repo is defined) and
-        (net_repo_ext.name in netlist.list_nets)
-  ignore_errors: 'yes'
+  loop: "{{ virt_networks | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"

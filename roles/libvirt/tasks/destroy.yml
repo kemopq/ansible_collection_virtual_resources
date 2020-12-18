@@ -1,15 +1,15 @@
 ---
 ############################################################
-#  tasks file for crating virt-resources
+#  tasks file for destroying virt-resources
 ############################################################
-- name: Import tasks volume_destroy.yml
-  import_tasks:
-    - volume_destroy.yml
+- name: Include tasks vol_pool_destroy
+  include_tasks: 'vol_pool_destroy.yml'
+  when: vol_pool is defined and vol_pool
 
-- name: Import tasks network_destroy.yml
-  import_tasks:
-    - network_destroy.yml
+- name: Include tasks network_destroy
+  include_tasks: 'network_destroy.yml'
+  when: virt_networks is defined and virt_networks
 
-- name: Import tasks vm_destroy.yml
-  import_tasks:
-    - vm_destroy.yml
+- name: Include tasks vm_destroy
+  include_tasks: 'vm_destroy.yml'
+  when: virt_machines is defined and virt_machines
