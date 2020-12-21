@@ -1,0 +1,55 @@
+---
+############################################################
+# tasks file for destroying instance of vm type
+############################################################
+- name: Set vm_name variable - single vm
+  set_facts:
+    vm_name: "{{ ii_vm.key }}"
+  when: ii_vm.nr_of_nodes == 1
+
+- name: Set vm_name variable - multi-instace vm
+  set_facts:
+    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+  when: ii_vm.nr_of_nodes > 1
+
+- name: Destroy vm block
+  block:
+
+    - name: Check status of fai-kolla server
+      virt:
+        name: "{{ vm_name }}"
+        command: status
+      register: vmstatus
+
+    - name: Destroy VM
+      virt:
+        name: "{{ vm_name }}"
+        command: destroy
+      when: vmstatus.status == "running"
+      ignore_errors: 'yes'
+
+    - name: Remove VM
+      virt:
+        name: "{{ vm_name }}"
+        command: undefine
+      ignore_errors: 'yes'
+
+  when: vm_name in vm_list.list_vms
+
+- name: Loop for volumes of vm instance
+  include_tasks: vm_vol_loop_destroy.yml
+  loop: "{{ ii_vm.volumes | dict2items }}"
+  loop_control:
+    loop_var: ii_vol
+    label: "{{ ii_vol.key }}"
+
+- name: Refresh storage pool list
+  command: 'virsh pool-refresh {{ vol_pool.name }}'
+
+- name: Remove previous key from authorized keys
+  command: ssh-keygen -R "{{ vm_name }}"
+  ignore_errors: 'yes'
+
+- name: Remove previous key2 from authorized keys
+  command: ssh-keygen -R "{{ net_internal.network_cidr | ipaddr(5) | ipaddr('address') }}"
+  ignore_errors: 'yes'

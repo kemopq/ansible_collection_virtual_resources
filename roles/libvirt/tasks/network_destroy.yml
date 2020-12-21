@@ -22,22 +22,20 @@
 
   when: routing_rools is defined
 
-- name: Stop virtual network
-  virt_net:
-    command: destroy
-    name: "{{ item.key }}"
-  when: item.key in netlist.list_nets
-  ignore_errors: 'yes'
+- name: Network loop for each network
+  include_tasks: 'network_loop_destroy.yml'
   loop: "{{ virt_networks | dict2items }}"
   loop_control:
-    label: "{{ item.key }}"
+    loop_var: ii_network
+    label: "{{ ii_network¸.key }}"
+  when: ii_network.key in netlist.list_nets
 
-- name: Remove virtual network
+- name: List virtual networks after creation
   virt_net:
-    command: undefine
-    name: "{{ item.key }}"
-  when: item.key in netlist.list_nets
-  ignore_errors: 'yes'
-  loop: "{{ virt_networks | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
+    command: list_nets
+    name: unknown
+  register: netlist
+
+- name: Print active virtual networks after removal
+  debug:
+    var: netlist.list_nets

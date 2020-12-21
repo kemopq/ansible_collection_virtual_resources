@@ -1,50 +1,16 @@
 ---
-############################################################
-#  tasks file for destroying virtual machine server
-############################################################
-- name: List vms
-  virt:
-    command: list_vms
-  register: vmlist
+##################################################################
+# tasks file for destroying virtual machines
+##################################################################
+- name: Print interesting information
+  import_tasks: vm_check.yml
 
-- name: Check status of fai-kolla server
-  virt:
-    name: "{{ vm_faikolla.name }}"
-    command: status
-  register: vmstatus
-  when: vm_faikolla.name in vmlist.list_vms
+- name: VM loop for each vm type
+  include_tasks: vm_loop_destroy.yml
+  loop: "{{ virt_machines | dict2items }}"
+  loop_control:
+    loop_var: ii_vm
+    label: "{{ ii_vm.key }}"
 
-- name: Destroy vm fai-kolla
-  virt:
-    name: "{{ vm_faikolla.name }}"
-    command: destroy
-  when: (vm_faikolla.name in vmlist.list_vms) and
-        (vmstatus.status == "running")
-  ignore_errors: 'yes'
-
-- name: Remove vm fai-kolla
-  virt:
-    name: "{{ vm_faikolla.name }}"
-    command: undefine
-  when: vm_faikolla.name in vmlist.list_vms
-  ignore_errors: 'yes'
-
-- name: Check if faikolla image exists on target folder
-  stat:
-    path: "{{ vol_pool.path }}/vm_faikolla.qcow2"
-  register: imageonplace
-
-- name: Remove faikolla image from os-volume pool
-  file:
-    path: "{{ vol_pool.path }}/vm_faikolla.qcow2"
-    state: absent
-  when: imageonplace.stat.exists
-  ignore_errors: 'yes'
-
-- name: Remove previous key from authorized keys
-  command: ssh-keygen -R "fai-kolla-srv"
-  ignore_errors: 'yes'
-
-- name: Remove previous key2 from authorized keys
-  command: ssh-keygen -R "{{ net_internal.network_cidr | ipaddr(5) | ipaddr('address') }}"
-  ignore_errors: 'yes'
+- name: Print interesting information to see what has changed
+  import_tasks: vm_check.yml

@@ -2,41 +2,16 @@
 ############################################################
 #  tasks file for crating virtual networks
 ############################################################
-- name: Import network_check.yml
+- name: Chack some variables and print interesting information
   import_tasks: 'network_check.yml'
 
-- name: Create virtual networks
-  vars:
-    net_name: "{{ item.key }}"
-    net_cidr: "{{ item.value.network_cidr }}"
-    net_mode: "{{ item.value.mode }}"
-  virt_net:
-    command: define
-    name: "{{ item.key }}"
-    xml: "{{ lookup('template', 'virt-net.xml.j2') }}"
-  when: item.key not in netlist.list_nets
+- name: Network loop for each network
+  include_tasks: 'network_loop_deploy.yml'
   loop: "{{ virt_networks | dict2items }}"
   loop_control:
-    label: "{{ item.key }}"
-
-- name: Virtual networks will be started at boot
-  virt_net:
-    autostart: 'yes'
-    name: "{{ item.key }}"
-  when: item.key not in netlist.list_nets
-  loop: "{{ virt_networks | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
-
-
-- name: Run virtual networks
-  virt_net:
-    command: create
-    name: "{{ item.key }}"
-  when: item.key not in netlist.list_nets
-  loop: "{{ virt_networks | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
+    loop_var: ii_network
+    label: "{{ ii_network.key }}"
+  when: ii_network.key not in netlist.list_nets
 
 - name: List virtual networks after creation
   virt_net:

@@ -1,0 +1,23 @@
+---
+############################################################
+#  tasks file for crating single virtual network
+############################################################
+- name: Create virtual networks
+  vars:
+    net_name: "{{ ii_network.key }}"
+    net_cidr: "{{ ii_network.value.network_cidr }}"
+    net_mode: "{{ ii_network.value.mode }}"
+  virt_net:
+    command: define
+    name: "{{ ii_network.key }}"
+    xml: "{{ lookup('template', 'virt-net.xml.j2') }}"
+
+- name: Virtual networks will be started at boot
+  virt_net:
+    autostart: 'yes'
+    name: "{{ ii_network.key }}"
+
+- name: Run virtual networks
+  virt_net:
+    command: create
+    name: "{{ ii_network.key }}"

@@ -1,0 +1,75 @@
+---
+############################################################
+# tasks file for creating instance of vm type
+############################################################
+- name: Set vm_name variable - single vm
+  set_facts:
+    vm_name: "{{ ii_vm.key }}"
+  when: ii_vm.nr_of_nodes == 1
+
+- name: Set vm_name variable - multi-instace vm
+  set_facts:
+    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+  when: ii_vm.nr_of_nodes > 1
+
+- name: Loop for volumes of vm instance
+  include_tasks: vm_vol_loop_deploy.yml
+  loop: "{{ ii_vm.volumes | dict2items }}"
+  loop_control:
+    loop_var: ii_vol
+    label: "{{ ii_vol.key }}"
+
+- name: Refresh storage pool list
+  command: 'virsh pool-refresh {{ vol_pool.name }}'
+
+- name: Create vm block
+  block:
+
+    - name: Create vm
+      vars:
+        server_name: "{{ vm_name }}"
+        server_memory_usage: "{{ ii_vm.memory }}"
+        server_cpu_usage: "{{ ii_vm.vcpu }}"
+        server_image: "{{ vol_pool.path }}/ii_vm.qcow2"
+        interface_public_type: '{% if vm_repo is defined %}
+                                network
+                            {% else %}
+                                bridge
+                            {% endif %}'
+        interface_public_net: '{% if vm_repo is defined %}
+                               {{ net_faikolla_ext.name }}
+                           {% else %}
+                               {{ ii_vm.ext_bridge }}
+                           {% endif %}'
+        interface_internal_net: "{{ net_internal.name }}"
+      virt:
+        name: "{{ vm_name }}"
+        command: define
+        xml: "{{ lookup('template', 'vm-virtlib.xml.j2') }}"
+
+    - name: Insert vm to /etc/host (single vm)
+      lineinfile:
+        path: "/etc/hosts"
+        regexp: "{{ vm_name }}"
+        line: "{{ net_internal.network_cidr | ipaddr(5)  | ipaddr('address') }} {{ ii_vm.name }}"
+      become: true
+
+  when: (vm_name not in vm_list.list_vms)
+
+- name: Check status of VM "{{ vm_name }}"
+  virt:
+    name: "{{ vm_name }}"
+    command: status
+  register: vm_status
+
+- name: DEBUG print status of VM "{{ vm_name }}"
+  debug:
+    var: vm_status
+
+- name: Run vm
+  virt:
+    name: "{{ vm_name }}"
+    command: start
+  when: ((ii_vm.start == 'immediately') and mkaction == 'deploy') or
+         (ii_vm.start == 'later') and mkaction == 'vmstart')) and
+         (vmstatus.status == "xxxxxxx")

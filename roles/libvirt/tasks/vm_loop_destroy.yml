@@ -1,0 +1,36 @@
+---
+#################################################################
+# tasks file for destroying all instances of virtual machine type
+#################################################################
+- name: Check if vms has at least one network
+  assert:
+    that:
+      - ii_vm.networks is defined
+      - ii_vm.networks
+    fail_msg: "VM has not properly defined networks"
+    quiet: 'yes'
+
+- name: Check if vms has boot volume
+  vars:
+    vol_key: "boot"
+  assert:
+    that:
+      - ii_vm.volumes is defined
+      - ii_vm.volumes
+      - vol_key in ii_vm.volumes
+    fail_msg: "VM has not properly defined volumes"
+    quiet: 'yes'
+
+- name: Check if number of instances > 0
+  assert:
+    that:
+      - ii_vm.nr_of_nodes is defined
+      - ii_vm.nr_of_nodes > 0
+    fail_msg: "VM nr_of_nodes not defined or has incorrect value"
+    quiet: 'yes'
+
+- name: Loop of all instances of vm
+  include_tasks: vm_inst_loop_destroy.yml
+  loop: "{{ range(1, ii_node.nr_of_nodes)|list }}"
+  loop_control:
+    loop_var: ii_index

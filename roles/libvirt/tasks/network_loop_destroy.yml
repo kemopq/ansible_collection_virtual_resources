@@ -1,0 +1,15 @@
+---
+############################################################
+#  tasks file for destroying single virtual network
+############################################################
+- name: Stop virtual network
+  virt_net:
+    command: destroy
+    name: "{{ ii_network.key }}"
+  ignore_errors: 'yes'
+
+- name: Remove virtual network
+  virt_net:
+    command: undefine
+    name: "{{ ii_network.key }}"
+  ignore_errors: 'yes'
