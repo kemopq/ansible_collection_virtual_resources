@@ -35,7 +35,7 @@ routing_rools:
 
 # virtual machines default variables
 virt_machines:
-  vm_faikolla:
+  faikolla:
     name: 'fai-kolla-srv'
     nr_of_nodes: 1
     memory: 2048
@@ -45,6 +45,8 @@ virt_machines:
       boot:
         size: '50G'
         image: '/home/kpog/WORK/downloads/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2'
+      ceph:
+        size: '10G'
     networks:
       public:
         type: 'bridge'
@@ -52,8 +54,12 @@ virt_machines:
         pub_gateway: '172.30.20.1'
         nameserver: '10.1.2.3'
         ext_bridge: 'br-main'
+      internal:
+        type: 'network'
+        address: '192.168.110.5'
+        boot: 'yes'
 
-  vm_osnodes:
+  osnodes:
     name: vmcloud
     nr_of_nodes: 1
     memory: 16384

@@ -22,61 +22,25 @@
   <on_reboot>restart</on_reboot>
   <on_crash>destroy</on_crash>
   <devices>
+{% for volume in volumes %}
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
-      <source file='{{server_image}}'/>
-      <target dev='vda' bus='virtio'/>
+      <source file='{{ volume.image }}'/>
+      <target dev='{{ volume.dev }}' bus='virtio'/>
+{% if volume.boot_order is defined %}
       <boot order='1'/>
+{% endif %}
     </disk>
-{% if server_add_volume is defined %}
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2'/>
-      <source file='{{server_add_volume}}'/>
-      <target dev='vdb' bus='virtio'/>
-    </disk>
-{% endif %}
-{% if (server_add_volume2 is defined) and (server_add_volume2 != "None") %}
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2'/>
-      <source file='{{server_add_volume2}}'/>
-      <target dev='vdc' bus='virtio'/>
-    </disk>
-{% endif %}
-{% if server_mount_volume is defined %}
-    <filesystem type='mount' accessmode='mapped'>
-      <source dir='{{ server_mount_volume }}'/>
-      <target dir='/vmshare'/>
-    </filesystem>
-{% endif %}
-    <interface type='{{interface_public_type}}'>
-      <source {{interface_public_type}}='{{interface_public_net}}'/>
+{% endfor %}
+{% for interface in interfaces %}
+    <interface type='{{ interface.type }}'>
+      <source {{ interface.type }}='{{ interface.net }}'/>
       <model type='virtio'/>
-    </interface>
-{% if interface_internal_net is defined %}
-    <interface type='network'>
-      <source network='{{interface_internal_net}}'/>
-      <model type='virtio'/>
-    ¦ <boot order='2'/>
-    </interface>
+{% if interface.boot_order is defined %}
+      <boot order='{{ interface.boot_order }}'/>
 {% endif %}
-{% if interface_storage_net is defined %}
-    <interface type='network'>
-      <source network='{{interface_storage_net}}'/>
-      <model type='virtio'/>
     </interface>
-{% endif %}
-{% if interface_tunnel_net is defined %}
-    <interface type='network'>
-      <source network='{{interface_tunnel_net}}'/>
-      <model type='virtio'/>
-    </interface>
-{% endif %}
-{% if interface_provider_net is defined %}
-    <interface type='network'>
-      <source network='{{interface_provider_net}}'/>
-      <model type='virtio'/>
-    </interface>
-{% endif %}
+{% endfor %}
     <console type='pty'>
       <target type='serial'/>
     </console>

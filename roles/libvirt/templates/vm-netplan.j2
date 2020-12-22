@@ -2,21 +2,22 @@
 network:
   version: 2
   ethernets:
-    ens3:
+{% for interface in interfaces %}
+    "{{ interface.interface_name }}":
+{% if interface.address is defined %}
       dhcp4: no
-      addresses: ["{{ net_external_address }}"]
-      gateway4: "{{ net_external_gateway }}"
-      nameservers:
-{% if cloud.domain_name is defined %}
-        search: ["{{ cloud.domain_name }}"]
-        addresses: ["{{ net_external_gateway }}"]
+      addresses: ["{{ interface.address }}"]
 {% else %}
-        search: [iskratel.si]
-        addresses: ["{{ vm_faikolla.nameserver }}"]
+      dhcp4: yes
 {% endif %}
-{% if net_internal_address is defined %}
-    ens4:
-      dhcp4: no
-      addresses: ["{{ net_internal_address }}"]
+{% if interface.gateway is defined %}
+      gateway4: "{{ interface.gateway }}"
+{% endif %}
+{% if interface.nameservers is defined %}
+      nameservers:
+{% if interface.domain_name is defined %}
+        search: ["{{ interface.domain_name }}"]
+{% endif %}
+        addresses: ["{{ interface.nameservers }}"]
 {% endif %}
 
