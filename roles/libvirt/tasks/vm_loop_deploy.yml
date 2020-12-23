@@ -5,8 +5,8 @@
 - name: Check if vms has at least one network
   assert:
     that:
-      - ii_vm.networks is defined
-      - ii_vm.networks
+      - ii_vm.value.net_interfaces is defined
+      - ii_vm.value.net_interfaces
     fail_msg: "VM has not properly defined networks"
     quiet: 'yes'
 
@@ -15,22 +15,22 @@
     vol_key: "boot"
   assert:
     that:
-      - ii_vm.volumes is defined
-      - ii_vm.volumes
-      - vol_key in ii_vm.volumes
+      - ii_vm.value.volumes is defined
+      - ii_vm.value.volumes
+      - vol_key in ii_vm.value.volumes
     fail_msg: "VM has not properly defined volumes"
     quiet: 'yes'
 
 - name: Check if number of instances > 0
   assert:
     that:
-      - ii_vm.nr_of_nodes is defined
-      - ii_vm.nr_of_nodes > 0
+      - ii_vm.value.nr_of_nodes is defined
+      - ii_vm.value.nr_of_nodes > 0
     fail_msg: "VM nr_of_nodes not defined or has incorrect value"
     quiet: 'yes'
 
 - name: Loop of all instances of vm
   include_tasks: vm_inst_loop_deploy.yml
-  loop: "{{ range(1, ii_node.nr_of_nodes)|list }}"
+  loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
   loop_control:
     loop_var: ii_index

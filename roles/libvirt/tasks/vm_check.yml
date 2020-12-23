@@ -1,32 +1,57 @@
 ---
 ############################################################
-#  tasks file for printing interesting information 
+#  tasks file for printing interesting information
 ############################################################
-- name: List vms
+- name: Read vms
   virt:
     command: list_vms
   register: vm_list
 
 - name: Print running vms
   debug:
-    var: vm_list
+    msg: "{{ vm_list.list_vms }}"
 
-- name: List volumes on virtual pool
+- name: Read virtual storage pools
+  virt_pool:
+    command: list_pools
+  register: poollist
+
+- name: Print notice that storage pool doesn't exist
+  debug:
+    msg: "No storage pool {{ poollist.list_pools }}"
+  when: vol_pool.name not in poollist.list_pools
+
+- name: Read volumes on virtual pool
   command: "virsh vol-list {{ vol_pool.name }}"
+  become: true
   register: vol_list
+  when: vol_pool.name in poollist.list_pools
 
 - name: Print available volumes
   debug:
-    var: vol_list
+    msg: "{{ vol_list.stdout_lines }}"
+  when: vol_pool.name in poollist.list_pools
 
-- name: List all qcow images in "{{ vol_pool.path }}" folder
-  find:
-    paths: "{{ vol_pool.path }}"
-    file_type: file
-    use_regex: 'yes'
-    patterns: '*.qcow2'
-  register: image_list
+- name: Check if "{{ vol_pool.path }}" exists
+  stat:
+    path: "{{ vol_pool.path }}"
+  register: folderonplace
 
-- name: Print existing images
+- name: Print notice that folder doesn't exist
   debug:
-    var: image_list
+    msg: "Folder {{ vol_pool.path }} does not exist"
+  when: not folderonplace.stat.exists or not folderonplace.stat.isdir
+
+  # - name: Read all qcow images in "{{ vol_pool.path }}" folder
+  #   find:
+  #     paths: "{{ vol_pool.path }}"
+  #     file_type: file
+  #     use_regex: 'yes'
+  #     patterns: '*.qcow2'
+  #   register: image_list
+  #   when: folderonplace.stat.exists and folderonplace.stat.isdir
+  #
+  # - name: Print existing images
+  #   debug:
+  #     msg: "{{ image_list.files }}"
+  #   when: folderonplace.stat.exists and folderonplace.stat.isdir

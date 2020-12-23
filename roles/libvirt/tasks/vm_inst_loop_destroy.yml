@@ -2,15 +2,15 @@
 ############################################################
 # tasks file for destroying instance of vm type
 ############################################################
-- name: Set vm_name variable - single vm
-  set_facts:
-    vm_name: "{{ ii_vm.key }}"
-  when: ii_vm.nr_of_nodes == 1
-
-- name: Set vm_name variable - multi-instace vm
-  set_facts:
+- name: Set vm_name variable
+  set_fact:
     vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
-  when: ii_vm.nr_of_nodes > 1
+
+- name: DEBUG
+  debug:
+    msg: |
+      "{{ vm_name }}"
+      "{{ vm_list.list_vms }}"
 
 - name: Destroy vm block
   block:
@@ -38,13 +38,15 @@
 
 - name: Loop for volumes of vm instance
   include_tasks: vm_vol_loop_destroy.yml
-  loop: "{{ ii_vm.volumes | dict2items }}"
+  loop: "{{ ii_vm.value.volumes | dict2items }}"
   loop_control:
     loop_var: ii_vol
     label: "{{ ii_vol.key }}"
 
 - name: Refresh storage pool list
-  command: 'virsh pool-refresh {{ vol_pool.name }}'
+  virt_pool:
+    command: refresh
+    name: "{{ vol_pool.name }}"
 
 - name: Remove previous key from authorized keys
   command: ssh-keygen -R "{{ vm_name }}"

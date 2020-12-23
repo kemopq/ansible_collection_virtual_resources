@@ -7,25 +7,6 @@
     - kemopq.virtual_resources
 
   tasks:
-    #    - name: "Include virtual_resources role"
-    #      import_role:
-    #        name: libvirt
-
-    - name: Include default vars
-      include_vars: "../../roles/libvirt/defaults/main.yml"
-
-    - name: DEBUG print networks dict
-      debug:
-        msg: "{{ virt_machines['faikolla'].networks }}"
-
-    - name: DEBUG print networks list
-      debug:
-        msg: "{{ virt_machines['faikolla'].networks | kemopq.virtual_resources.networks_to_list }}"
-
-    - name: DEBUG print volume dict
-      debug:
-        msg: "{{ virt_machines['faikolla'].volumes }}"
-
-    - name: DEBUG print volume list
-      debug:
-        msg: "{{ virt_machines['faikolla'].volumes | kemopq.virtual_resources.volumes_to_list }}"
+    - name: "Include virtual_resources role"
+      import_role:
+        name: libvirt

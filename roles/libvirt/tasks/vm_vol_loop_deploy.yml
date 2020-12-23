@@ -2,16 +2,9 @@
 ############################################################
 # tasks file for creating volumes for vm
 ############################################################
-
-- name: Set vol_name variable - single vm
-  set_facts:
-    vol_name: "{{ ii_vm.key }}-{{ ii_vol.key }}"
-  when: ii_vm.nr_of_nodes == 1
-
-- name: Set vol_name variable - multi-instace vm
-  set_facts:
+- name: Set vol_name variable
+  set_fact:
     vol_name: "{{ ii_vm.key }}-{{ ii_vol.key }}-node{{ ii_index }}"
-  when: ii_vm.nr_of_nodes > 1
 
 - name: Check if image already exists on target folder
   stat:
@@ -23,12 +16,11 @@
   block:
 
     - name: Copy image to os-volume pool
-      command: cp "{{ ii_vol.image }}" "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
+      command: cp "{{ ii_vol.value.image }}" "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
       when: (not imageonplace.stat.exists)
 
     - name: Set root password, disable cloud init, inject public ssh key to fai-kolla, enable ssh server, set hostname
-      command: virt-customize -q -a "{{ vol_name }}.qcow2"
-                              --root-password "password:{{ ii_vm.passwd }}"
+      command: virt-customize -q -a "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
                               --uninstall cloud-init
                               --ssh-inject "root:file:{{ ssh_my_pub_key }}"
                               --append-line '/etc/ssh/sshd_config:PermitRootLogin yes'
@@ -38,23 +30,14 @@
       become: true
 
     - name: Resize volume
-      command: 'qemu-img resize {{ vol_pool.path }}/{{ vol_name }}.qcow2 {{ ii_vol.vol_size }}'
+      command: 'qemu-img resize {{ vol_pool.path }}/{{ vol_name }}.qcow2 {{ ii_vol.value.size }}'
       become: true
 
     - name: Create netplan file
       become: true
       vars:
-        net_external_address: '{% if vm_repo is defined %}
-                                  {{ net_faikolla_ext.network_cidr | ipaddr(5) }}
-                              {% else %}
-                                  {{ vm_faikolla.pub_cidr }}
-                              {% endif %}'
-        net_external_gateway: '{% if vm_repo is defined %}
-                                  {{ net_faikolla_ext.network_cidr | ipaddr(1) | ipaddr("address") }}
-                               {% else %}
-                                  {{ vm_faikolla.pub_gateway }}
-                               {% endif %}'
-        net_internal_address: "{{ net_internal.network_cidr | ipaddr(5) }}"
+        interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+        index: "{{ ii_index - 1 }}"
       template:
         src: 'vm-netplan.j2'
         dest: '/tmp/50-cloud-init.yaml'
@@ -64,7 +47,7 @@
 
     - name: Copy netplan file to '{{ ii_vm.key }}' server
       become: true
-      command: 'virt-copy-in -a {{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
+      command: 'virt-copy-in -a {{ vol_pool.path }}/{{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
 
     - name: Remove tmp file
       become: true
@@ -72,11 +55,13 @@
         path: '/tmp/50-cloud-init.yaml'
         state: absent
 
-  when: (ii_vol.key == 'boot') and (ii_vm.boot_mode == 'image') and
+  when: (ii_vol.key == 'boot') and (ii_vm.value.boot_mode == 'image') and
         (not imageonplace.stat.exists)
 
 # Create empty volume
 - name: Create empty volume
   command: virsh vol-create-as --pool "{{ vol_pool.name }}" --name "{{ vol_name }}.qcow2"
-  when: ((ii_vol.key != 'boot') or (ii_vm.boot_mode != 'image')) and
+                               --capacity "{{ ii_vol.value.size }}" --format qcow2
+  become: true
+  when: ((ii_vol.key != 'boot') or (ii_vm.value.boot_mode != 'image')) and
          (not imageonplace.stat.exists)

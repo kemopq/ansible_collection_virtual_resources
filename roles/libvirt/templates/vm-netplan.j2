@@ -6,7 +6,7 @@ network:
     "{{ interface.interface_name }}":
 {% if interface.address is defined %}
       dhcp4: no
-      addresses: ["{{ interface.address }}"]
+      addresses: ["{{ interface.address_cidr | next_nth_usable(index) }}"]
 {% else %}
       dhcp4: yes
 {% endif %}
@@ -15,9 +15,12 @@ network:
 {% endif %}
 {% if interface.nameservers is defined %}
       nameservers:
-{% if interface.domain_name is defined %}
-        search: ["{{ interface.domain_name }}"]
+{% if domain_name is defined %}
+        search: ["{{ domain_name }}"]
 {% endif %}
         addresses: ["{{ interface.nameservers }}"]
+{% for nameserver in interface.nameservers %}
+            - "{{ nameserver }}"
+{% endfor %}
 {% endif %}
-
+{% endfor %}

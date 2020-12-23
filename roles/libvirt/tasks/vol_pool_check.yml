@@ -11,7 +11,7 @@
   debug:
     msg: "Folder {{ vol_pool.path }} exists status = {{ folderonplace.stat.exists }}"
 
-- name: List virtual storage pools
+- name: Read virtual storage pools
   virt_pool:
     command: list_pools
   register: poollist

@@ -2,24 +2,18 @@
 ############################################################
 # tasks file for destroying volumes of vms
 ############################################################
-- name: Set vol_name variable - single vm
-  set_facts:
-    vol_name: "{{ ii_vm.key }}-{{ ii_vol.key }}"
-  when: ii_vm.nr_of_nodes == 1
-
-- name: Set vol_name variable - multi-instace vm
-  set_facts:
+- name: Set vol_name variable
+  set_fact:
     vol_name: "{{ ii_vm.key }}-{{ ii_vol.key }}-node{{ ii_index }}"
-  when: ii_vm.nr_of_nodes > 1
 
 - name: Remove volume from pool
-  command: 'virsh vol-delete --pool {{ vol_pool.name }} {{ vol_name }}'
-  when: vol_name in vol_list.list_vol
+  command: "virsh vol-delete --pool {{ vol_pool.name }} {{ vol_name }}.qcow2"
+  become: true
   ignore_errors: 'yes'
 
 - name: Check if image file exists on target folder
   stat:
-    path: "{{ vol_name }}.qcow2"
+    path: "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
   register: imageonplace
 
 - name: Remove image from target folder

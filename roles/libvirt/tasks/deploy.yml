@@ -8,14 +8,14 @@
     name:
       - lxml
 
-- name: Import tasks vol_pool_deploy.yml
-  import_tasks: 'vol_pool_deploy.yml'
+- name: Include tasks vol_pool_deploy.yml
+  include_tasks: 'vol_pool_deploy.yml'
   when: vol_pool is defined and vol_pool
 
-- name: Import tasks network_deploy.yml
-  import_tasks: 'network_deploy.yml'
+- name: Include tasks network_deploy.yml
+  include_tasks: 'network_deploy.yml'
   when: virt_networks is defined and virt_networks
 
-- name: Import tasks vm_deploy.yml
-  import_tasks: 'vm_deploy.yml'
-  when: virt_machines is defined and vol_machines
+- name: Include tasks vm_deploy.yml
+  include_tasks: 'vm_deploy.yml'
+  when: virt_machines is defined and virt_machines

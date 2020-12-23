@@ -27,10 +27,10 @@
   loop: "{{ virt_networks | dict2items }}"
   loop_control:
     loop_var: ii_network
-    label: "{{ ii_network¸.key }}"
+    label: "{{ ii_network.key }}"
   when: ii_network.key in netlist.list_nets
 
-- name: List virtual networks after creation
+- name: Read virtual networks after deletion
   virt_net:
     command: list_nets
     name: unknown

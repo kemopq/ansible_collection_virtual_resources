@@ -25,15 +25,18 @@ virt_networks:
     network_cidr: '192.168.140.0/24'
     mode: 'isolated'                       # can be 'isolated', 'nat'
 
-routing_rools:
-  internal_to_storage:
-    net1: 'os_internal'
-    net2: 'os_storage'
-  internal_to_provider:
-    net1: 'os_internal'
-    net2: 'os_provider'
+    #routing_rools:
+    #  internal_to_storage:
+    #    net1: 'os_internal'
+    #    net2: 'os_storage'
+    #  internal_to_provider:
+    #    net1: 'os_internal'
+    #    net2: 'os_provider'
 
 # virtual machines default variables
+domain_name: "kemopq1.test"
+ssh_my_pub_key: "/home/kpog/.ssh/id_rsa.pub"
+
 virt_machines:
   faikolla:
     name: 'fai-kolla-srv'
@@ -41,23 +44,22 @@ virt_machines:
     memory: 2048
     vcpu: 1
     boot_mode: 'image'    # can be image, PXE or UEFI
+    start: 'immediately'
     volumes:
       boot:
         size: '50G'
         image: '/home/kpog/WORK/downloads/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2'
-      ceph:
-        size: '10G'
-    networks:
+    net_interfaces:
       public:
-        type: 'bridge'
-        pub_cidr: '172.30.21.43/22'
-        pub_gateway: '172.30.20.1'
-        nameserver: '10.1.2.3'
         ext_bridge: 'br-main'
+        address_cidr: '172.30.21.43/22'
+        pub_gateway: '172.30.20.1'
+        nameservers:
+          - '10.1.2.3'
       internal:
-        type: 'network'
-        address: '192.168.110.5'
-        boot: 'yes'
+        network: 'os_internal'
+        address_cidr: '192.168.100.5/24'
+        include_to_hosts: 'yes'
 
   osnodes:
     name: vmcloud
@@ -65,11 +67,19 @@ virt_machines:
     memory: 16384
     vcpu: 2
     boot_mode: 'uefi'
+    start: 'later'
     volumes:
       boot:
-        vol_size: '200G'
+        size: '200G'
       ceph:
-        vol_size: '50G'
-    networks:
-      net_provider:
-        type: 'network'
+        size: '50G'
+    net_interfaces:
+      external:
+        network: 'os_external'
+      internal:
+        network: 'os_internal'
+        boot: 'yes'
+      storage:
+        network: 'os_storage'
+      provider:
+        network: 'os_provider'
