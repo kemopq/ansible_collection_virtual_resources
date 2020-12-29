@@ -5,29 +5,37 @@
 - name: Import vol_pool_check.yml
   import_tasks: 'vol_pool_check.yml'
 
-- name: Create virt-volumes folder
-  file:
-    path: "{{ vol_pool.path }}"
-    state: directory
-    mode: 0755
-    recurse: 'yes'
-  when: (not folderonplace.stat.exists)
+- name: Creating virt-volumes folder block
+  block:
 
-- name: Pause 2s
-  pause:
-    seconds: 2
-  when: (not folderonplace.stat.exists)
+    - name: Create virt-volumes folder
+      file:
+        path: "{{ vol_pool.path }}"
+        state: directory
+        mode: 0755
+        recurse: 'yes'
 
-- name: Create virt-volumes pool
-  virt_pool:
-    command: define
-    name: "{{ vol_pool.name }}"
-    xml: "{{ lookup('template', 'pool-virt-volumes.xml.j2') }}"
-  when: (vol_pool.name not in poollist.list_pools)
+    - name: Pause 2s
+      pause:
+        seconds: 2
 
-- name: Starts virt-volumes pool
-  virt_pool:
-    command: create
-    name: "{{ vol_pool.name }}"
-    autostart: 'yes'
-  when: (vol_pool.name not in poollist.list_pools)
+  when: (vol_pool.create | bool) and
+        (not folderonplace.stat.exists)
+
+- name: Creating vol-pool block
+  block:
+
+    - name: Create virt-volumes pool
+      virt_pool:
+        command: define
+        name: "{{ vol_pool.name }}"
+        xml: "{{ lookup('template', 'pool-virt-volumes.xml.j2') }}"
+
+    - name: Starts virt-volumes pool
+      virt_pool:
+        command: create
+        name: "{{ vol_pool.name }}"
+        autostart: 'yes'
+
+  when: (vol_pool.create | bool) and
+        (vol_pool.name not in poollist.list_pools)

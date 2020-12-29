@@ -34,3 +34,10 @@
   loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
   loop_control:
     loop_var: ii_index
+
+- name: Loop of all instances of vm for starting vm
+  include_tasks: vm_inst_loop_vmstart.yml
+  loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
+  loop_control:
+    loop_var: ii_index
+  when: ii_vm.value.start == 'immediately'

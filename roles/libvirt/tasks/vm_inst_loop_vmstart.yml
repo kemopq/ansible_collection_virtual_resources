@@ -1,0 +1,19 @@
+---
+############################################################
+# tasks file for running instance of vm type
+############################################################
+- name: Set vm_name variable
+  set_fact:
+    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+
+- name: Check status of VM "{{ vm_name }}"
+  virt:
+    name: "{{ vm_name }}"
+    command: status
+  register: vm_status
+
+- name: Run vm
+  virt:
+    name: "{{ vm_name }}"
+    command: start
+  when: vm_status.status == 'shutdown'

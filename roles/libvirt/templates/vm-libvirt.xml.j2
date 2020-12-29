@@ -25,7 +25,7 @@
 {% for volume in volumes %}
     <disk type='file' device='disk'>
       <driver name='qemu' type='qcow2'/>
-      <source file='{{ vmtype_name }}-{{ volume.name }}-node{{ index }}.qcow2'/>
+      <source file='{{ vol_pool.path }}/{{ vmtype_name }}-{{ volume.name }}-node{{ index }}.qcow2'/>
       <target dev='{{ volume.dev }}' bus='virtio'/>
 {% if volume.boot_order is defined %}
       <boot order='1'/>

@@ -5,23 +5,28 @@
 - name: Import vol_pool_check.yml
   import_tasks: 'vol_pool_check.yml'
 
-- name: Stop virt-volumes pool
-  virt_pool:
-    command: destroy
-    name: "{{ vol_pool.name }}"
-  when: vol_pool.name in poollist.list_pools
-  ignore_errors: 'yes'
+- name: Remove virt-pool block
+  block:
 
-- name: Remove virt-volumes pool
-  virt_pool:
-    command: undefine
-    name: "{{ vol_pool.name }}"
-  when: vol_pool.name in poollist.list_pools
-  ignore_errors: 'yes'
+    - name: Stop virt-volumes pool
+      virt_pool:
+        command: destroy
+        name: "{{ vol_pool.name }}"
+      ignore_errors: 'yes'
+
+    - name: Remove virt-volumes pool
+      virt_pool:
+        command: undefine
+        name: "{{ vol_pool.name }}"
+      ignore_errors: 'yes'
+
+  when: (vol_pool.create | bool) and
+        vol_pool.name in poollist.list_pools
 
 - name: Remove virt-volumes folder
   file:
     path: "{{ vol_pool.path }}"
     state: absent
-  when: folderonplace.stat.exists
+  when: (vol_pool.create | bool) and
+        folderonplace.stat.exists
   ignore_errors: 'yes'

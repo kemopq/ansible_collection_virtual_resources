@@ -1,0 +1,7 @@
+---
+############################################################
+#  tasks file for crating virt-resources
+############################################################
+- name: Include tasks vm_vmstart.yml
+  include_tasks: 'vm_vmstart.yml'
+  when: virt_machines is defined and virt_machines

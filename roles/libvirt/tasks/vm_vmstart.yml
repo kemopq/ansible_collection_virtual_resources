@@ -1,0 +1,13 @@
+---
+################################################################
+# tasks file for creating virtual machines
+################################################################
+- name: Chack some variables and print interesting information
+  import_tasks: vm_check.yml
+
+- name: VM loop for each vm type
+  include_tasks: vm_loop_vmstart.yml
+  loop: "{{ virt_machines | dict2items }}"
+  loop_control:
+    loop_var: ii_vm
+    label: "{{ ii_vm.key }}"

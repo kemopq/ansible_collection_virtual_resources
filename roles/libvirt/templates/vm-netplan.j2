@@ -4,9 +4,9 @@ network:
   ethernets:
 {% for interface in interfaces %}
     "{{ interface.interface_name }}":
-{% if interface.address is defined %}
+{% if interface.address_cidr is defined %}
       dhcp4: no
-      addresses: ["{{ interface.address_cidr | next_nth_usable(index) }}"]
+      addresses: ["{{ interface.address_cidr | next_nth_usable(index | int ) }}/{{ interface.address_cidr | ipaddr('prefix') }}"]
 {% else %}
       dhcp4: yes
 {% endif %}
@@ -18,9 +18,9 @@ network:
 {% if domain_name is defined %}
         search: ["{{ domain_name }}"]
 {% endif %}
-        addresses: ["{{ interface.nameservers }}"]
+        addresses:
 {% for nameserver in interface.nameservers %}
-            - "{{ nameserver }}"
+          - "{{ nameserver }}"
 {% endfor %}
 {% endif %}
 {% endfor %}

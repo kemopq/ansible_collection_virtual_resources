@@ -6,26 +6,32 @@ mkaction: 'unknown'   # can be deploy,destroy
 vol_pool:
   name: 'virt-volumes'
   path: '/tmp/virt-volumes'
+  create: 'yes'
 
 # network default variables
 virt_networks:
   os_external:
     network_cidr: '192.168.100.0/24'
     mode: 'nat'                       # can be 'isolated', 'nat'
+    create: 'yes'
   os_internal:
     network_cidr: '192.168.110.0/24'
     mode: 'isolated'                       # can be 'isolated', 'nat'
+    create: 'yes'
   os_storage:
     network_cidr: '192.168.120.0/24'
     mode: 'isolated'                       # can be 'isolated', 'nat'
+    create: 'yes'
   os_tunnel:
     network_cidr: '192.168.130.0/24'
     mode: 'isolated'                       # can be 'isolated', 'nat'
+    create: 'yes'
   os_provider:
     network_cidr: '192.168.140.0/24'
     mode: 'isolated'                       # can be 'isolated', 'nat'
+    create: 'yes'
 
-    #routing_rools:
+    # routing_rools:
     #  internal_to_storage:
     #    net1: 'os_internal'
     #    net2: 'os_storage'
@@ -53,12 +59,12 @@ virt_machines:
       public:
         ext_bridge: 'br-main'
         address_cidr: '172.30.21.43/22'
-        pub_gateway: '172.30.20.1'
+        gateway: '172.30.20.1'
         nameservers:
           - '10.1.2.3'
       internal:
         network: 'os_internal'
-        address_cidr: '192.168.100.5/24'
+        address_cidr: '192.168.110.5/24'
         include_to_hosts: 'yes'
 
   osnodes:
@@ -78,6 +84,8 @@ virt_machines:
         network: 'os_external'
       internal:
         network: 'os_internal'
+        address_cidr: '192.168.110.11/24'    # only needed when include_to_hosts is yes
+        include_to_hosts: 'yes'
         boot: 'yes'
       storage:
         network: 'os_storage'

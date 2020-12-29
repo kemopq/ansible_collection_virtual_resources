@@ -2,7 +2,7 @@
 - name: "Check mkaction"
   assert:
     that:
-      - (mkaction == 'deploy') or (mkaction == 'destroy')
+      - (mkaction == 'deploy') or (mkaction == 'destroy') or (mkaction == 'vmstart')
     fail_msg: "Wrong value of mkaction variable = {{ mkaction }}"
     quiet: 'yes'
 

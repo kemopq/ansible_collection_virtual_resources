@@ -6,12 +6,6 @@
   set_fact:
     vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
 
-- name: DEBUG
-  debug:
-    msg: |
-      "{{ vm_name }}"
-      "{{ vm_list.list_vms }}"
-
 - name: Destroy vm block
   block:
 
@@ -32,6 +26,13 @@
       virt:
         name: "{{ vm_name }}"
         command: undefine
+      when: ii_vm.value.boot_mode != 'uefi'
+      ignore_errors: 'yes'
+
+    - name: Remove VM with nvram
+      command: "virsh undefine {{ vm_name }} --nvram"
+      become: true
+      when: ii_vm.value.boot_mode == 'uefi'
       ignore_errors: 'yes'
 
   when: vm_name in vm_list.list_vms
@@ -47,11 +48,8 @@
   virt_pool:
     command: refresh
     name: "{{ vol_pool.name }}"
+  ignore_errors: 'yes'
 
 - name: Remove previous key from authorized keys
   command: ssh-keygen -R "{{ vm_name }}"
-  ignore_errors: 'yes'
-
-- name: Remove previous key2 from authorized keys
-  command: ssh-keygen -R "{{ net_internal.network_cidr | ipaddr(5) | ipaddr('address') }}"
   ignore_errors: 'yes'

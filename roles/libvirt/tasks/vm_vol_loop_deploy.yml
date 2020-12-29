@@ -23,6 +23,7 @@
       command: virt-customize -q -a "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
                               --uninstall cloud-init
                               --ssh-inject "root:file:{{ ssh_my_pub_key }}"
+                              --root-password password:iskratel
                               --append-line '/etc/ssh/sshd_config:PermitRootLogin yes'
                               --run-command "dpkg-reconfigure openssh-server"
                               --run-command "systemctl enable ssh.service"

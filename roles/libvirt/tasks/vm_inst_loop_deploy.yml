@@ -39,30 +39,18 @@
         command: define
         xml: "{{ lookup('template', 'vm-libvirt.xml.j2') }}"
 
-    - name: Insert vm to /etc/host (single vm)
+    - name: Insert vm to /etc/host
+      vars:
+        index: "{{ ii_index - 1 }}"
       lineinfile:
         path: "/etc/hosts"
         regexp: "{{ vm_name }}"
-        line: "{{ item.address_cidr | ipaddr('address') }} {{ ii_vm.key }}"
+        line: "{{ item.value.address_cidr | next_nth_usable(index | int) }} {{ vm_name }}"
       become: true
-      when: (item.include_to_hosts is defined) and (item.include_to_hosts | bool) and
-            (item.address_cidr is defined)
-      loop: "{{ ii_vm.value.networks | dict2items }}"
+      when: (item.value.include_to_hosts is defined) and (item.value.include_to_hosts | bool) and
+            (item.value.address_cidr is defined)
+      loop: "{{ ii_vm.value.net_interfaces | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
 
   when: (vm_name not in vm_list.list_vms)
-
-- name: Check status of VM "{{ vm_name }}"
-  virt:
-    name: "{{ vm_name }}"
-    command: status
-  register: vm_status
-
-- name: Run vm
-  virt:
-    name: "{{ vm_name }}"
-    command: start
-  when: ((ii_vm.value.start == 'immediately') and (mkaction == 'deploy') or
-        (ii_vm.value.start == 'later') and (mkaction == 'vmstart')) and
-        (vm_status.status == 'shutdown')
