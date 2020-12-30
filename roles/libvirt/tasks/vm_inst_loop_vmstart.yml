@@ -16,4 +16,5 @@
   virt:
     name: "{{ vm_name }}"
     command: start
-  when: vm_status.status == 'shutdown'
+  when: (vm_status.status is defined) and
+        (vm_status.status == 'shutdown')

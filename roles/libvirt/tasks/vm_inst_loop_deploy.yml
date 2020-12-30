@@ -53,4 +53,4 @@
       loop_control:
         label: "{{ item.key }}"
 
-  when: (vm_name not in vm_list.list_vms)
+  when: (vm_name not in vm_list)

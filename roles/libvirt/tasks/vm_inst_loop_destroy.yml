@@ -35,7 +35,7 @@
       when: ii_vm.value.boot_mode == 'uefi'
       ignore_errors: 'yes'
 
-  when: vm_name in vm_list.list_vms
+  when: vm_name in vm_list
 
 - name: Loop for volumes of vm instance
   include_tasks: vm_vol_loop_destroy.yml

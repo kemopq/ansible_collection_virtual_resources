@@ -7,6 +7,16 @@
     - kemopq.virtual_resources
 
   tasks:
-    - name: "Include virtual_resources role"
+    - name: Include virtual_resources role
       import_role:
         name: libvirt
+
+    - name: Get MAC list
+      kemopq.virtual_resources.getmac:
+        vm_type: 'osnodes'
+        network: 'os_internal'
+      register: getmac_result
+
+    - name: Print mac list
+      debug:
+        msg: "{{ getmac_result.mac_list }}"

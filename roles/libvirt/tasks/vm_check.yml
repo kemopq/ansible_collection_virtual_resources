@@ -5,11 +5,21 @@
 - name: Read vms
   virt:
     command: list_vms
-  register: vm_list
+  register: vm_list_virt
+
+- name: Set fact vm_list (list is defined)
+  set_fact:
+    vm_list: "{{ vm_list_virt.list_vms }}"
+  when: vm_list.list_vms is defined
+
+- name: Set fact vm_list (list is not defined)
+  set_fact:
+    vm_list: "[]"
+  when: vm_list.list_vms is not defined
 
 - name: Print running vms
   debug:
-    msg: "{{ vm_list.list_vms }}"
+    msg: "{{ vm_list }}"
 
 - name: Read virtual storage pools
   virt_pool:
@@ -30,7 +40,8 @@
 - name: Print available volumes
   debug:
     msg: "{{ vol_list.stdout_lines }}"
-  when: vol_pool.name in poollist.list_pools
+  when: (vol_list.stdout_lines is defined) and
+        (vol_pool.name in poollist.list_pools)
 
 - name: Check if "{{ vol_pool.path }}" exists
   stat:
