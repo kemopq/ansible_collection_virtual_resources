@@ -19,7 +19,7 @@
       pause:
         seconds: 2
 
-  when: (vol_pool.create | bool) and
+  when: (vol_pool.create is defined) and (vol_pool.create | bool) and
         (not folderonplace.stat.exists)
 
 - name: Creating vol-pool block
@@ -37,5 +37,5 @@
         name: "{{ vol_pool.name }}"
         autostart: 'yes'
 
-  when: (vol_pool.create | bool) and
+  when: (vol_pool.create is defined) and (vol_pool.create | bool) and
         (vol_pool.name not in poollist.list_pools)

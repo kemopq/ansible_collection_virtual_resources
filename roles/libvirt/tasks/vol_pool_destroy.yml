@@ -20,8 +20,8 @@
         name: "{{ vol_pool.name }}"
       ignore_errors: 'yes'
 
-  when: (vol_pool.create | bool) and
-        vol_pool.name in poollist.list_pools
+  when: (vol_pool.create is defined) and (vol_pool.create | bool) and
+        (vol_pool.name in poollist.list_pools)
 
 - name: Remove virt-volumes folder
   file:

@@ -1,0 +1,62 @@
+---
+##########################################################
+# Configuration data for libvirt role
+##########################################################
+
+# storage pool configuration data
+vol_pool:
+  name: 'virt-volumes'       # name of a storage pool
+  path: '/tmp/virt-volumes'  # path, where volumes of the storage pool are located
+  create: 'yes'              # [yes/no] default='no' - 'yes' if pool should be created, 'no' if pool already exists
+
+# list of virtual network's configuration data
+virt_networks:
+  os_external:
+    network_cidr: '192.168.100.0/24'  # network cidr address
+    mode: 'nat'                       # [isolated/nat] - libvirt network mode
+    create: 'yes'                     # [yes/no] default='no' - 'yes' if network should be created, 'no' if network already exists
+  os_internal:
+    network_cidr: '192.168.110.0/24'
+    mode: 'isolated'
+    create: 'yes'
+
+# list of routing rools
+routing_rools:
+  internal_to_external:   # routing between net1 and net2 is possible
+    net1: 'os_internal'
+    net2: 'os_external'
+
+# virtual machines default variables
+domain_name: "kemopq1.test"                     # domain name for VMs
+ssh_my_pub_key: "/home/ubuntu/.ssh/id_rsa.pub"  # pub key on main host, which will be inserted to VMs for passwordless ssh
+
+# list of virtual machine's configuration data
+virt_machines:
+  osnode:                                  # name of a virtual machine type
+    nr_of_nodes: 1                         # number of instances of virtual machine's type
+                                           # names of created virtual machines are <vm_type>-node1, <vm_type>-node2, ...
+    memory: 2048                           # virtual memory
+    vcpu: 2                                # virtual cpus
+    boot_mode: 'image'                     # [image/pxe/uefi] - 'image' image is provided for boot volume, 'pxe'/'uefi' pxe/uefi boot on net interface
+    start: 'later'                         # [immediately/later] - start of VM immediately after creation or later, when mkaction = vmstart
+    volumes:                               # list of volumes attached to VM
+      boot:                                # boot volume
+        size: '200G'                       # size of boot volume
+        image: '/home/ubuntu/img/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2'  # path to image (needed when boot_mode = 'image'),
+                                                                                  # currently only ubuntu18.04 is supported
+      ceph:                                # add volume
+        size: '50G'                        # size of add volume
+    net_interfaces:                        # list of network interfaces of VM
+      public:                              # name of the interface (bridged interface) - only possible when nr_of_nodes=1
+        ext_bridge: 'br-main'              # bridge on the main host
+        address_cidr: '172.30.21.43/22'    # cidr address of the interface
+        gateway: '172.30.20.1'             # default gateway
+        nameservers:                       # list of DNS servers
+          - '10.1.2.3'
+      external:                            # name of the interface (boot interface)
+        network: 'os_external'             # network, to which interface is connected
+        include_to_hosts: 'yes'            # [yes/no] default='no' - 'yes' if vm should be inserted to /etc/hosts file of main host
+        address_cidr: '192.168.110.11/24'  # cidr address of interface (only needed when include_to_hosts is 'yes')
+        boot: 'yes'                        # [yes/no] default='no' - 'yes' if PXE/UEFI boot is possible on this interface
+      internal:                            # name of the interface
+        network: 'os_internal'             # network, to which interface is connected
