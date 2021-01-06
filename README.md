@@ -1,7 +1,7 @@
 # kemopq.virtual_resources collection
-Collection for creating virtual resources (virtual machines, networks, volumes) on different virtualization platforms (Currently only libvirt is supported). 
-For virtual machines type and number of instances are defined. Those number of VMs are created with names:
-_<vm_type>-node1, <vm_type>-node2, ..._
+Collection for creating virtual resources (virtual machines, networks, volumes) on different virtualization platforms (currently only libvirt is supported).  
+For virtual machines type and number of instances are defined. VMs are created with names:  
+_<vm_type>-node1, <vm_type>-node2, ..._   
 Each VM can have several network interfaces and volumes attached. Image can be provided for boot volume (currently only ubuntu18.04 is supported). VM can also boot from network interface (pxe or uefi boot is possible - ovfm package should be installed on main host for uefi boot).
 
 ### Installing collection  
@@ -9,8 +9,12 @@ Install this collection locally:
 ```
 ansible-galaxy collection install kemopq.virtual_resources -p ./collections
 ```
-_./collectins_ folder should be included to _collections_path_ parameter in ansible configuration file. See:
+_./collections_ folder should be included to _collections_path_ parameter in ansible configuration file (ansible.cfg). See:
 https://docs.ansible.com/ansible/latest/reference_appendices/config.html#ansible-configuration-settings-locations
+```
+[defaults]
+collections_path = ./collection
+```
 
 ### Using collection  
 Roles and module can be used on your ansible playbook. It can be  referenced by its fully qualified collection name (FQCN):
@@ -45,13 +49,13 @@ Template of configuration file is in config folder. It's well commented. The con
 - virtual machines definition
 
 ### Running your playbook
-When running your playbook a path to configuration file should be provided. Additionaly a parameter mkaction parameter should be set. Possible values are:
+When running your playbook a path to configuration file should be provided. Additionaly a parameter _mkaction_ should be set. Possible values are:
 - 'deploy': virtual resources are created
 - 'destroy': virtual resources are destroyed
-- 'vmstart': VMs, which didn't start immediately after creating are started
+- 'vmstart': VMs, which didn't start immediately after creation, are started
 
 ```
-ansible-playbook  -i localhost, -e mkaction=[deploy/destroy/vmstart] -e "@<your_config_file>.json" <your_playbook>.yml
+ansible-playbook  -i localhost, -e mkaction=[deploy/destroy/vmstart] -e "@<your_config_file>.yml" <your_playbook>.yml
 ```
 
 ### Plugins

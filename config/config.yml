@@ -29,6 +29,7 @@ routing_rools:
 # virtual machines default variables
 domain_name: "kemopq1.test"                     # domain name for VMs
 ssh_my_pub_key: "/home/ubuntu/.ssh/id_rsa.pub"  # pub key on main host, which will be inserted to VMs for passwordless ssh
+vm_passwd: "mypasswd"                           # root password of VM, created from image
 
 # list of virtual machine's configuration data
 virt_machines:
@@ -56,7 +57,8 @@ virt_machines:
       external:                            # name of the interface (boot interface)
         network: 'os_external'             # network, to which interface is connected
         include_to_hosts: 'yes'            # [yes/no] default='no' - 'yes' if vm should be inserted to /etc/hosts file of main host
-        address_cidr: '192.168.110.11/24'  # cidr address of interface (only needed when include_to_hosts is 'yes')
+        address_cidr: '192.168.100.11/24'  # cidr address of interface (only needed when include_to_hosts is 'yes')
         boot: 'yes'                        # [yes/no] default='no' - 'yes' if PXE/UEFI boot is possible on this interface
       internal:                            # name of the interface
         network: 'os_internal'             # network, to which interface is connected
+        address_cidr: '192.168.110.11/24'  # cidr address of interface (only needed when include_to_hosts is 'yes')

@@ -19,15 +19,15 @@
       command: cp "{{ ii_vol.value.image }}" "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
       when: (not imageonplace.stat.exists)
 
-    - name: Set root password, disable cloud init, inject public ssh key to fai-kolla, enable ssh server, set hostname
+    - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname
       command: virt-customize -q -a "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
                               --uninstall cloud-init
                               --ssh-inject "root:file:{{ ssh_my_pub_key }}"
-                              --root-password password:iskratel
+                              --root-password "password:{{ vm_passwd }}"
                               --append-line '/etc/ssh/sshd_config:PermitRootLogin yes'
                               --run-command "dpkg-reconfigure openssh-server"
                               --run-command "systemctl enable ssh.service"
-                              --hostname fai-kolla-srv
+                              --hostname "{{ vm_name }}"
       become: true
 
     - name: Resize volume

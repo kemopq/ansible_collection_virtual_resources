@@ -10,12 +10,12 @@
 - name: Set fact vm_list (list is defined)
   set_fact:
     vm_list: "{{ vm_list_virt.list_vms }}"
-  when: vm_list.list_vms is defined
+  when: vm_list_virt.list_vms is defined
 
 - name: Set fact vm_list (list is not defined)
   set_fact:
     vm_list: "[]"
-  when: vm_list.list_vms is not defined
+  when: vm_list_virt.list_vms is not defined
 
 - name: Print running vms
   debug:

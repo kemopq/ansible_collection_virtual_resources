@@ -9,7 +9,7 @@
 - name: Destroy vm block
   block:
 
-    - name: Check status of fai-kolla server
+    - name: Check status of vm server
       virt:
         name: "{{ vm_name }}"
         command: status
