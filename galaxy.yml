@@ -10,7 +10,7 @@ namespace: kemopq
 name: virtual_resources
 
 # The version of the collection. Must be compatible with semantic versioning
-version: 1.0.0
+version: 1.0.1
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -37,7 +37,11 @@ license_file: 'LICENSE'
 
 # A list of tags you want to associate with the collection for indexing/searching. A tag name has the same character
 # requirements as 'namespace' and 'name'
-tags: []
+tags:
+  - "libvirt"
+  - "virtual_machines"
+  - "virtual_networks"
+  - "virtual_volumes"
 
 # Collections that this collection requires to be installed for it to be usable. The key of the dict is the
 # collection label 'namespace.name'. The value is a version range
@@ -55,4 +59,4 @@ repository: https://github.com/kemopq/ansible_collection_virtual_resources.git
 # homepage: http://example.com
 
 # The URL to the collection issue tracker
-# issues: http://example.com/issue/tracker
+issues: https://github.com/kemopq/ansible_collection_virtual_resources/issues
