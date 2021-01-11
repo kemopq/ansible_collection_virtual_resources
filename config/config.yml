@@ -52,6 +52,8 @@ virt_machines:
         ext_bridge: 'br-main'              # bridge on the main host
         address_cidr: '172.30.21.43/22'    # cidr address of the interface
         gateway: '172.30.20.1'             # default gateway
+        search_domains:                    # list of search domains
+          - 'mydomain.com'
         nameservers:                       # list of DNS servers
           - '10.1.2.3'
       external:                            # name of the interface (boot interface)

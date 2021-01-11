@@ -30,6 +30,8 @@ def netint_to_list(netint_in):
             net_info['gateway'] = netint_data['gateway']
         if ('nameservers' in netint_data.keys()):
             net_info['nameservers'] = netint_data['nameservers']
+        if ('search_domains' in netint_data.keys()):
+            net_info['search_domains'] = netint_data['search_domains']
         netint_out.append(net_info)
     # print(netint_out)
     return netint_out
@@ -52,7 +54,9 @@ def volumes_to_list(volumes_in):
             ii_char = chr(ord(ii_char) + 1)
         if (vol_name == 'boot'):
             vol_info['boot_order'] = '1'
-        volumes_out.append(vol_info)
+            volumes_out.insert(0, vol_info)
+        else:
+            volumes_out.append(vol_info)
     # print(volumes_out)
     return volumes_out
 

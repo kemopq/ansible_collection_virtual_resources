@@ -1,4 +1,4 @@
-# kemopq.virtual_resources collection
+# Ansible collection: kemopq.virtual_resources
 Collection for creating virtual resources (virtual machines, networks, volumes) on different virtualization platforms (currently only libvirt is supported).  
 For virtual machines type and number of instances are defined. VMs are created with names:  
 _<vm_type>-node1, <vm_type>-node2, ..._   
@@ -14,10 +14,12 @@ https://docs.ansible.com/ansible/latest/reference_appendices/config.html#ansible
 ```
 [defaults]
 collections_path = ./collection
+host_key_checking = False
 ```
+Additional parameter host_key_checking is added, so ssh to created VM is done without key checking.
 
 ### Using collection  
-Roles and module can be used on your ansible playbook. It can be  referenced by its fully qualified collection name (FQCN):
+Roles and module can be used on your ansible playbook.
 ```
 - name: Your playbook
   hosts: all

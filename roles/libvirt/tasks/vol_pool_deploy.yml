@@ -35,7 +35,11 @@
       virt_pool:
         command: create
         name: "{{ vol_pool.name }}"
+
+    - name: Ensure that a pool will be started at boot
+      virt_pool:
         autostart: 'yes'
+        name: "{{ vol_pool.name }}"
 
   when: (vol_pool.create is defined) and (vol_pool.create | bool) and
         (vol_pool.name not in poollist.list_pools)

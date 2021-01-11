@@ -11,6 +11,3 @@
   loop_control:
     loop_var: ii_vm
     label: "{{ ii_vm.key }}"
-
-- name: Print interesting information to see what has changed
-  import_tasks: vm_check.yml

@@ -2,7 +2,7 @@
 ############################################################
 #  tasks file for crating virtual networks
 ############################################################
-- name: Chack some variables and print interesting information
+- name: Check some variables and print interesting information
   import_tasks: 'network_check.yml'
 
 - name: Network loop for each network

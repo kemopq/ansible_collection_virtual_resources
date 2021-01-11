@@ -18,3 +18,20 @@
     command: start
   when: (vm_status.status is defined) and
         (vm_status.status == 'shutdown')
+
+- name: Resize volume block
+  delegate_to: "{{ vm_name }}"
+  remote_user: root
+  block:
+
+    - name: Wait for server to become active
+      wait_for_connection:
+        delay: 1
+        timeout: 300
+
+    - name: Resize volume
+      shell: "growpart /dev/vda 1; resize2fs /dev/vda1"
+
+  when: (ii_vm.value.boot_mode == 'image') and
+        (vm_status.status is defined) and
+        (vm_status.status == 'shutdown')

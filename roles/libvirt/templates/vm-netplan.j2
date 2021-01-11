@@ -15,8 +15,11 @@ network:
 {% endif %}
 {% if interface.nameservers is defined %}
       nameservers:
-{% if domain_name is defined %}
-        search: ["{{ domain_name }}"]
+{% if (interface.search_domains is defined) and (interface.search_domains|length > 0) %}
+        search:
+{% for search_domain in interface.search_domains %}
+          - "{{ search_domain }}"
+{% endfor %}
 {% endif %}
         addresses:
 {% for nameserver in interface.nameservers %}

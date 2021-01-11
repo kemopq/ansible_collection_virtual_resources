@@ -3,11 +3,6 @@
 #  tasks file for crating virt-resources
 ############################################################
 
-- name: Install python lxml package
-  pip:
-    name:
-      - lxml
-
 - name: Include tasks vol_pool_deploy.yml
   include_tasks: 'vol_pool_deploy.yml'
   when: vol_pool is defined and vol_pool
