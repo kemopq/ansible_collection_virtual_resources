@@ -1,6 +1,7 @@
 ---
 # main variables
-mkaction: 'unknown'   # can be deploy,destroy
+virt_resources_action: 'unknown'   # can be deploy, destroy, vmstart
+virt_resources_type: 'all'   # can be all, virt_vol_pool, virt_network, virt_machine
 
 # volume pool default variables
 vol_pool:

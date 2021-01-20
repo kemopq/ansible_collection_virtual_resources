@@ -1,10 +1,28 @@
 ---
-- name: "Check mkaction"
+- name: "Check virt_resources_action variable"
   assert:
     that:
-      - (mkaction == 'deploy') or (mkaction == 'destroy') or (mkaction == 'vmstart')
-    fail_msg: "Wrong value of mkaction variable = {{ mkaction }}"
+      - (virt_resources_action == 'deploy') or (virt_resources_action == 'destroy') or (virt_resources_action == 'vmstart')
+    fail_msg: "Wrong value of virt_resources_action variable = {{ virt_resources_action }}"
     quiet: 'yes'
 
-- name: "include tasks {{ mkaction }}.yml"
-  include_tasks: "{{ mkaction }}.yml"
+- name: "Check virt_resources_type variable"
+  assert:
+    that:
+      - (virt_resources_type == 'all') or (virt_resources_type == 'virt_vol_pool') or
+        (virt_resources_type == 'virt_network') or (virt_resources_type == 'virt_machine')
+    fail_msg: "Wrong value of virt_resources_type variable = {{ virt_resources_type }}"
+    quiet: 'yes'
+
+- name: "Print input params"
+  debug:
+    msg: |
+      "virt_resources_action: {{ virt_resources_action }}"
+      "virt_resources_type: {{ virt_resources_type }}"
+
+- name: "Print input params - vm list"
+  debug:
+    var: virt_machines_type
+
+- name: "include tasks {{ virt_resources_action }}.yml"
+  include_tasks: "{{ virt_resources_action }}.yml"

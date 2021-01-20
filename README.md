@@ -51,13 +51,24 @@ Template of configuration file is in config folder. It's well commented. The con
 - virtual machines definition
 
 ### Running your playbook
-When running your playbook a path to configuration file should be provided. Additionaly a parameter _mkaction_ should be set. Possible values are:
+When running your playbook a path to configuration file should be provided. Additionaly next parameters should be specified:
+
+__virt_resources_action__ 
+Possible values are:
 - 'deploy': virtual resources are created
 - 'destroy': virtual resources are destroyed
 - 'vmstart': VMs, which didn't start immediately after creation, are started
+__virt_resources_type__
+Possible values are:
+- 'all': actions on all virtual resources
+- 'virt_vol_pool': actions on volume pool
+- 'virt_network': actions on networks
+- 'virt_machine': actions on virtual machines
+__virt_machines_type__
+List of virtual machines types, on which actions are executed. If parameter is not provided, actions will be executed on all VMs.
 
 ```
-ansible-playbook  -i localhost, -e mkaction=[deploy/destroy/vmstart] -e "@<your_config_file>.yml" <your_playbook>.yml
+ansible-playbook  -i localhost, -e virt_resources_action=[deploy/destroy/vmstart] -e virt_resources_type=[all/virt_vol_pool/virt_network/virt_machines] -e "@<your_config_file>.yml" <your_playbook>.yml
 ```
 
 ### Plugins
