@@ -15,12 +15,13 @@
 - name: Image boot volume block
   block:
 
-    - name: Copy image to os-volume pool
-      command: cp "{{ ii_vol.value.image }}" "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
+    - name: Copy image to /tmp
+      command: cp "{{ ii_vol.value.image }}" "/tmp/{{ vol_name }}.qcow2"
+      delegate_to: localhost
       when: (not imageonplace.stat.exists)
 
     - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname
-      command: virt-customize -q -a "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
+      command: virt-customize -q -a "/tmp/{{ vol_name }}.qcow2"
                               --uninstall cloud-init
                               --ssh-inject "root:file:{{ ssh_my_pub_key }}"
                               --root-password "password:{{ vm_passwd }}"
@@ -29,10 +30,12 @@
                               --run-command "systemctl enable ssh.service"
                               --hostname "{{ vm_name }}"
       become: true
+      delegate_to: localhost
 
     - name: Resize volume
-      command: 'qemu-img resize {{ vol_pool.path }}/{{ vol_name }}.qcow2 {{ ii_vol.value.size }}'
+      command: 'qemu-img resize /tmp/{{ vol_name }}.qcow2 {{ ii_vol.value.size }}'
       become: true
+      delegate_to: localhost
 
     - name: Create netplan file
       become: true
@@ -45,16 +48,32 @@
         owner: root
         group: root
         mode: 0644
+      delegate_to: localhost
 
     - name: Copy netplan file to '{{ ii_vm.key }}' server
       become: true
-      command: 'virt-copy-in -a {{ vol_pool.path }}/{{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
+      command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
+      delegate_to: localhost
 
     - name: Remove tmp file
       become: true
       file:
         path: '/tmp/50-cloud-init.yaml'
         state: absent
+      delegate_to: localhost
+
+    - name: Copy image to vol pool
+      copy:
+        src: "/tmp/{{ vol_name }}.qcow2"
+        dest: "{{ vol_pool.path }}/{{ vol_name }}.qcow2"
+        mode: '0666'
+
+    - name: Remove image on /tmp
+      become: true
+      file:
+        path: '/tmp/{{ vol_name }}.qcow2'
+        state: absent
+      delegate_to: localhost
 
   when: (ii_vol.key == 'boot') and (ii_vm.value.boot_mode == 'image') and
         (not imageonplace.stat.exists)

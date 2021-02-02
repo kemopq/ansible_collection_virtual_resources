@@ -42,11 +42,13 @@
     - name: Insert vm to /etc/host
       vars:
         index: "{{ ii_index - 1 }}"
+        vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
       lineinfile:
         path: "/etc/hosts"
-        regexp: "{{ vm_name }}"
-        line: "{{ item.value.address_cidr | next_nth_usable(index | int) }} {{ vm_name }}"
+        regexp: "{{ vm_hostname }}"
+        line: "{{ item.value.address_cidr | next_nth_usable(index | int) }} {{ vm_hostname }}"
       become: true
+      delegate_to: localhost
       when: (item.value.include_to_hosts is defined) and (item.value.include_to_hosts | bool) and
             (item.value.address_cidr is defined)
       loop: "{{ ii_vm.value.net_interfaces | dict2items }}"

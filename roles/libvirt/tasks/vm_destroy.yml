@@ -11,4 +11,5 @@
   loop_control:
     loop_var: ii_vm
     label: "{{ ii_vm.key }}"
-  when: (virt_machines_type is not defined) or (ii_vm.key in virt_machines_type)
+  when: ((virt_machines_type is not defined) or (ii_vm.key in virt_machines_type)) and
+        (ii_vm.value.create | bool)

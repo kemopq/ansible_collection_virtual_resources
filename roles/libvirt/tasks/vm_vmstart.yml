@@ -11,3 +11,4 @@
   loop_control:
     loop_var: ii_vm
     label: "{{ ii_vm.key }}"
+  when: (ii_vm.value.create | bool)
