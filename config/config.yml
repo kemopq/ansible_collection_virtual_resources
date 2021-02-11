@@ -35,7 +35,9 @@ vm_passwd: "mypasswd"                           # root password of VM, created f
 virt_machines:
   osnode:                                  # name of a virtual machine type
     nr_of_nodes: 1                         # number of instances of virtual machine's type
-                                           # names of created virtual machines are <vm_type>-node1, <vm_type>-node2, ...
+                                           #          names of created virtual machines are <vm_type>-node1, <vm_type>-node2, ...
+    create: 'yes'                          # [yes/no] default='yes' - 'yes' if VM should be created, 'no' if VM or HW node already exists;
+                                           #          no other parameters are needed if value = 'no'
     memory: 2048                           # virtual memory
     vcpu: 2                                # virtual cpus
     boot_mode: 'image'                     # [image/pxe/uefi] - 'image' image is provided for boot volume, 'pxe'/'uefi' pxe/uefi boot on net interface
