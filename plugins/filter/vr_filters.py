@@ -1,13 +1,14 @@
 #########################################
 # hello_world collection's filter plugins
 #########################################
+import ipaddress
 
 # netint_to_list filter
 # Prepare a list of network interfaces in a form suitable for vm creation
 def netint_to_list(netint_in):
     # print(netint_in)
     netint_out = []
-    ii = 3
+    ii = 0
     for netint_name, netint_data in netint_in.items():
         net_info = {}
         net_info['name'] = netint_name
@@ -21,10 +22,17 @@ def netint_to_list(netint_in):
             net_info['boot_order'] = '2'
         if ('address_cidr' in netint_data.keys()):
             net_info['address_cidr'] = netint_data['address_cidr']
+            interface = ipaddress.ip_interface(netint_data['address_cidr'])
+            net_info['ip_address'] = str(interface.ip)
+            network = ipaddress.ip_network(interface.network)
+            net_info['network_address'] = str(network.network_address)
+            net_info['network_broadcast'] = str(network.broadcast_address)
+            net_info['network_netmask'] = str(network.netmask)
+            net_info['network_prefix'] = str(network.prefixlen)
         if ('interface_name' in netint_data.keys()):
             net_info['interface_name'] = netint_data['interface_name']
         else:
-            net_info['interface_name'] = 'ens' + str(ii)
+            net_info['interface_name_id'] = str(ii)
             ii += 1
         if ('gateway' in netint_data.keys()):
             net_info['gateway'] = netint_data['gateway']

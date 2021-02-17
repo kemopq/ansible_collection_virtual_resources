@@ -1,0 +1,13 @@
+{% for interface in interfaces %}
+{% if interface.nameservers is defined %}
+{% if domain_name is defined %}
+domain {{ domain_name }}
+{% endif %}
+{% for nameserver in interface.nameservers %}
+nameserver {{ nameserver }}
+{% endfor %}
+{% if (interface.search_domains is defined) and (interface.search_domains|length > 0) %}
+search {{ interface.search_domains | join(" ") }}
+{% endif %}
+{% endif %}
+{% endfor %}

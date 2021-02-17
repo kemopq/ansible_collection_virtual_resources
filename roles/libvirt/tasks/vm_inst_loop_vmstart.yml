@@ -12,28 +12,14 @@
     command: status
   register: vm_status
 
+- name: Set fact status of VM
+  set_fact:
+    vm_status_fact: "{{ vm_status.status }}"
+  when: (vm_status.status is defined) and (ii_index == 1)
+
 - name: Run vm
   virt:
     name: "{{ vm_name }}"
     command: start
   when: (vm_status.status is defined) and
-        (vm_status.status == 'shutdown')
-
-- name: Resize volume block
-  vars:
-    vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
-  delegate_to: "{{ vm_hostname }}"
-  remote_user: root
-  block:
-
-    - name: Wait for server to become active
-      wait_for_connection:
-        delay: 1
-        timeout: 60
-
-    - name: Resize volume
-      shell: "growpart /dev/vda 1; resize2fs /dev/vda1"
-
-  when: (ii_vm.value.boot_mode == 'image') and
-        (vm_status.status is defined) and
         (vm_status.status == 'shutdown')

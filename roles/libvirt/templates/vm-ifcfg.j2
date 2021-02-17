@@ -1,0 +1,15 @@
+DEVICE="{{ interface_name }}"
+TYPE=Ethernet
+ONBOOT=yes
+{% if interface.ip_address is defined %}
+BOOTPROTO=none
+IPADDR="{{ interface.address_cidr | next_nth_usable(index | int ) }}"
+PREFIX="{{ interface.network_prefix }}"
+{% if interface.gateway is defined %}
+GATEWAY="{{ interface.gateway }}"
+{% endif %}
+{% else %}
+BOOTPROTO=dhcp
+{% endif %}
+IPV4_FAILURE_FATAL=yes
+NAME="System {{ interface_name }}"

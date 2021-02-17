@@ -1,0 +1,50 @@
+---
+############################################################
+# tasks file for making additional actions on running vm
+############################################################
+- name: Set vm_name variable
+  set_fact:
+    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+
+- name: Get OS version
+  block:
+
+    - name: Check OS version of image
+      kemopq.virtual_resources.get_os_version:
+        vm_name: "{{ vm_name }}"
+      register: get_os_version_result
+
+    - name: Set fact OS version
+      set_fact:
+        os_version: "{{ get_os_version_result.os_version }}"
+
+    - name: Print OS version of image
+      debug:
+        msg: "OS version of vm {{ vm_name }} is  {{ os_version }}"
+
+  when: (ii_vm.value.boot_mode == 'image') and
+        (ii_index == 1)
+
+- name: Resize volume block
+  vars:
+    vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
+  delegate_to: "{{ vm_hostname }}"
+  remote_user: root
+  block:
+
+    - name: Wait for server to become active
+      wait_for_connection:
+        delay: 1
+        timeout: 60
+
+    - name: Resize volume (ubuntu, debian)
+      shell: "growpart /dev/vda 1; resize2fs /dev/vda1"
+      when: (os_version.distro == 'debian') or (os_version.distro == 'ubuntu')
+
+    - name: Resize volume (centos)
+      shell: "growpart /dev/vda 1; xfs_growfs /dev/vda1"
+      when: (os_version.distro == 'centos')
+
+  when: (ii_vm.value.boot_mode == 'image') and
+        (vm_status_fact is defined) and
+        (vm_status_fact == 'shutdown')

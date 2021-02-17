@@ -5,4 +5,4 @@ Filters:
 
 Modules:
 - getmac (returns a list of MAC addresses for a given network for all instances of vm type)
-
+- get_os_version (returns OS version name, major and minor version of given OS image)

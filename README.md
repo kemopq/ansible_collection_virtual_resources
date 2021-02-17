@@ -2,7 +2,11 @@
 Collection for creating virtual resources (virtual machines, networks, volumes) on different virtualization platforms (currently only libvirt is supported).  
 For virtual machines type and number of instances are defined. VMs are created with names:  
 _<vm_type>-node1, <vm_type>-node2, ..._   
-Each VM can have several network interfaces and volumes attached. Image can be provided for boot volume (currently only ubuntu18.04 is supported). VM can also boot from network interface (pxe or uefi boot is possible - ovfm package should be installed on main host for uefi boot).
+Each VM can have several network interfaces and volumes attached. Image can be provided for boot volume (currently only ubuntu18.04 is supported). VM can also boot from network interface (pxe or uefi boot is possible - ovfm package should be installed on main host for uefi boot).  
+Currently supported OS:
+- Ubuntu (tested with Ubuntu18.04)
+- Debian (tested with Debian9.9)
+- Centos (tested with Centos7)
 
 ### Installing collection  
 Install this collection locally:
@@ -78,4 +82,5 @@ Filters:
 
 Modules:
 - getmac (returns a list of MAC addresses for a given network for all instances of vm type)
+- get_os_version (returns OS version name, major and minor version of given OS image)
 

@@ -3,7 +3,13 @@ network:
   version: 2
   ethernets:
 {% for interface in interfaces %}
-    "{{ interface.interface_name }}":
+{% if interface.interface_name is defined %}
+{% set interface_name = interface.interface_name %}
+{% else %}
+{% set interface_id =  interface.interface_name_id | int + 3 %}
+{% set interface_name = 'ens' + interface_id | string %}
+{% endif %}
+    "{{ interface_name }}":
 {% if interface.address_cidr is defined %}
       dhcp4: no
       addresses: ["{{ interface.address_cidr | next_nth_usable(index | int ) }}/{{ interface.address_cidr | ipaddr('prefix') }}"]

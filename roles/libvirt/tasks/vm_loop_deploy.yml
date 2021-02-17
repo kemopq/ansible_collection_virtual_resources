@@ -41,3 +41,10 @@
   loop_control:
     loop_var: ii_index
   when: ii_vm.value.start == 'immediately'
+
+- name: Loop of all instances of vm for making additional actions
+  include_tasks: vm_inst_loop_addact.yml
+  loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
+  loop_control:
+    loop_var: ii_index
+  when: ii_vm.value.start == 'immediately'

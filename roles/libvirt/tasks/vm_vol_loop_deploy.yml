@@ -15,52 +15,200 @@
 - name: Image boot volume block
   block:
 
+    - name: Get OS version
+      block:
+        - name: Check OS version of image
+          kemopq.virtual_resources.get_os_version:
+            image_path: "{{ ii_vol.value.image }}"
+          register: get_os_version_result
+
+        - name: Set fact OS version
+          set_fact:
+            os_version: "{{ get_os_version_result.os_version }}"
+
+        - name: Print OS version of image
+          debug:
+            msg: "OS version of image {{ ii_vol.value.image }} is  {{ os_version }}"
+
+      when: ii_index == 1
+
     - name: Copy image to /tmp
       command: cp "{{ ii_vol.value.image }}" "/tmp/{{ vol_name }}.qcow2"
       delegate_to: localhost
       when: (not imageonplace.stat.exists)
 
-    - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname
+    - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname (ubuntu, debian)
+      vars:
+        vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
       command: virt-customize -q -a "/tmp/{{ vol_name }}.qcow2"
                               --uninstall cloud-init
-                              --ssh-inject "root:file:{{ ssh_my_pub_key }}"
                               --root-password "password:{{ vm_passwd }}"
                               --append-line '/etc/ssh/sshd_config:PermitRootLogin yes'
+                              --ssh-inject "root:file:{{ ssh_my_pub_key }}"
+                              --hostname "{{ vm_hostname }}"
                               --run-command "dpkg-reconfigure openssh-server"
                               --run-command "systemctl enable ssh.service"
-                              --hostname "{{ vm_name }}"
       become: true
       delegate_to: localhost
+      when: (os_version.distro == 'ubuntu') or (os_version.distro == 'debian')
+
+    - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname (centos)
+      vars:
+        vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
+      command: virt-customize -q -a "/tmp/{{ vol_name }}.qcow2"
+                              --uninstall cloud-init
+                              --root-password "password:{{ vm_passwd }}"
+                              --append-line '/etc/ssh/sshd_config:PermitRootLogin yes'
+                              --append-line '/etc/ssh/sshd_config:UseDNS no'
+                              --ssh-inject "root:file:{{ ssh_my_pub_key }}"
+                              --selinux-relabel
+                              --hostname "{{ vm_hostname }}"
+      become: true
+      delegate_to: localhost
+      when: (os_version.distro == 'centos')
 
     - name: Resize volume
       command: 'qemu-img resize /tmp/{{ vol_name }}.qcow2 {{ ii_vol.value.size }}'
       become: true
       delegate_to: localhost
 
-    - name: Create netplan file
-      become: true
-      vars:
-        interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
-        index: "{{ ii_index - 1 }}"
-      template:
-        src: 'vm-netplan.j2'
-        dest: '/tmp/50-cloud-init.yaml'
-        owner: root
-        group: root
-        mode: 0644
-      delegate_to: localhost
+    - name: Prepare network configuration - Ubuntu netplan
+      block:
 
-    - name: Copy netplan file to '{{ ii_vm.key }}' server
-      become: true
-      command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
-      delegate_to: localhost
+        - name: Create netplan file
+          become: true
+          vars:
+            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            index: "{{ ii_index - 1 }}"
+          template:
+            src: 'vm-netplan.j2'
+            dest: '/tmp/50-cloud-init.yaml'
+            owner: root
+            group: root
+            mode: 0644
+          delegate_to: localhost
 
-    - name: Remove tmp file
-      become: true
-      file:
-        path: '/tmp/50-cloud-init.yaml'
-        state: absent
-      delegate_to: localhost
+        - name: Copy netplan file to '{{ ii_vm.key }}' server
+          become: true
+          command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
+          delegate_to: localhost
+
+        - name: Remove tmp file
+          become: true
+          file:
+            path: '/tmp/50-cloud-init.yaml'
+            state: absent
+          delegate_to: localhost
+
+      when: (os_version.distro == 'ubuntu') and (os_version.major_version | int >= 18)
+
+    - name: Prepare network configuration - Debian interfaces
+      block:
+        - name: Create interfaces file
+          become: true
+          vars:
+            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            index: "{{ ii_index - 1 }}"
+          template:
+            src: 'vm-interfaces.j2'
+            dest: '/tmp/interfaces'
+            owner: root
+            group: root
+            mode: 0644
+          delegate_to: localhost
+
+        - name: Copy interfaces file to '{{ ii_vm.key }}' server
+          become: true
+          command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/interfaces /etc/network'
+          delegate_to: localhost
+
+        - name: Remove tmp file
+          become: true
+          file:
+            path: '/tmp/interfaces'
+            state: absent
+          delegate_to: localhost
+
+      when: ((os_version.distro == 'ubuntu') and (os_version.major_version | int < 18)) or
+            (os_version.distro == 'debian')
+
+    - name: Prepare network configuration - Centos ifcfg
+      block:
+
+        - name: Set fact - interfaces list
+          set_fact:
+            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+
+        - name: Create ifcfg file
+          become: true
+          vars:
+            index: "{{ ii_index - 1 }}"
+            interface_name: 'eth0'
+          template:
+            src: 'vm-ifcfg.j2'
+            dest: '/tmp/ifcfg-{{ interface_name }}'
+            owner: root
+            group: root
+            mode: 0644
+          delegate_to: localhost
+          loop: "{{ interfaces }}"
+          loop_control:
+            label: "{{ interface.name }}"
+            loop_var: interface
+
+        - name: Copy ifcfg file to '{{ ii_vm.key }}' server
+          vars:
+            interface_name: 'eth0'
+          become: true
+          command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/ifcfg-{{ interface_name }} /etc/sysconfig/network-scripts'
+          delegate_to: localhost
+          loop_control:
+            label: "{{ interface.name }}"
+            loop_var: interface
+
+        - name: Remove tmp file
+          vars:
+            interface_name: 'eth0'
+          become: true
+          file:
+            path: '/tmp/ifcfg-{{ interface_name }}'
+            state: absent
+          delegate_to: localhost
+          loop_control:
+            label: "{{ interface.name }}"
+            loop_var: interface
+
+      when: (os_version.distro == 'centos')
+
+    - name: Prepare resolv.conf
+      block:
+
+        - name: Create resolv.conf file
+          become: true
+          vars:
+            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+          template:
+            src: 'vm-resolv.conf.j2'
+            dest: '/tmp/resolv.conf'
+            owner: root
+            group: root
+            mode: 0644
+          delegate_to: localhost
+
+        - name: Copy resolv.conf file to '{{ ii_vm.key }}' server
+          become: true
+          command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/resolv.conf /etc'
+          delegate_to: localhost
+
+        - name: Remove tmp file
+          become: true
+          file:
+            path: '/tmp/resolv.conf'
+            state: absent
+          delegate_to: localhost
+
+      when: ((os_version.distro == 'ubuntu') and (os_version.major_version | int < 18)) or
+            (os_version.distro == 'debian') or (os_version.distro == 'centos')
 
     - name: Copy image to vol pool
       copy:
