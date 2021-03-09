@@ -30,6 +30,8 @@
     label: "{{ ii_network.key }}"
   when: (ii_network.value.create is defined) and (ii_network.value.create | bool) and
         (ii_network.key in netlist.list_nets)
+        ((ii_network.value.virtualization_host is not defined) or
+        (ii_network.value.virtualization_host == inventory_hostname))
 
 - name: Read virtual networks after deletion
   virt_net:

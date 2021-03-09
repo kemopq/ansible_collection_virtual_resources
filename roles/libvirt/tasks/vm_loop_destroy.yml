@@ -15,3 +15,6 @@
   loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
   loop_control:
     loop_var: ii_index
+  when: (ii_vm.value.virtualization_host is not defined) or
+        (((ii_vm.value.virtualization_host | type_debug) == 'str') and (ii_vm.value.virtualization_host == inventory_hostname)) or
+        (ii_vm.value.virtualization_host[ii_index - 1] == inventory_hostname)

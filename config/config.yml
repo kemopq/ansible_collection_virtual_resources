@@ -15,6 +15,8 @@ virt_networks:
     network_cidr: '192.168.100.0/24'  # network cidr address
     mode: 'nat'                       # [isolated/nat] - libvirt network mode
     create: 'yes'                     # [yes/no] default='no' - 'yes' if network should be created, 'no' if network already exists
+    virtualization_host: 'localhost'  # name of virtualization host, where network will be created; 
+                                      # if parameter is not defined, network will be created on every host
   os_internal:
     network_cidr: '192.168.110.0/24'
     mode: 'isolated'
@@ -38,6 +40,10 @@ virt_machines:
                                            #          names of created virtual machines are <vm_type>-node1, <vm_type>-node2, ...
     create: 'yes'                          # [yes/no] default='yes' - 'yes' if VM should be created, 'no' if VM or HW node already exists;
                                            #          no other parameters are needed if value = 'no'
+    virtualization_host: 'localhost'       # name of virtualization host, where network will be created;
+                                           # if parameter is not defined, vm will be created on every host
+                                           # if parameter is a string, all instances of the vm type will be created on the same host
+                                           # if parameter is a list, the virtualization host for each instance can be set
     memory: 2048                           # virtual memory
     vcpu: 2                                # virtual cpus
     boot_mode: 'image'                     # [image/pxe/uefi] - 'image' image is provided for boot volume, 'pxe'/'uefi' pxe/uefi boot on net interface

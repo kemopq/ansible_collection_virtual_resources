@@ -12,7 +12,9 @@
     loop_var: ii_network
     label: "{{ ii_network.key }}"
   when: (ii_network.value.create is defined) and (ii_network.value.create | bool) and
-        (ii_network.key not in netlist.list_nets)
+        (ii_network.key not in netlist.list_nets) and
+        ((ii_network.value.virtualization_host is not defined) or
+        (ii_network.value.virtualization_host == inventory_hostname))
 
 - name: Read virtual networks after creation
   virt_net:
