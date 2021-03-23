@@ -16,6 +16,7 @@
   block:
 
     - name: Get OS version
+      delegate_to: localhost
       block:
         - name: Check OS version of image
           kemopq.virtual_resources.get_os_version:
@@ -33,11 +34,12 @@
       when: ii_index == 1
 
     - name: Copy image to /tmp
-      command: cp "{{ ii_vol.value.image }}" "/tmp/{{ vol_name }}.qcow2"
       delegate_to: localhost
+      command: cp "{{ ii_vol.value.image }}" "/tmp/{{ vol_name }}.qcow2"
       when: (not imageonplace.stat.exists)
 
     - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname (ubuntu, debian)
+      delegate_to: localhost
       vars:
         vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
       command: virt-customize -q -a "/tmp/{{ vol_name }}.qcow2"
@@ -49,10 +51,10 @@
                               --run-command "dpkg-reconfigure openssh-server"
                               --run-command "systemctl enable ssh.service"
       become: true
-      delegate_to: localhost
       when: (os_version.distro == 'ubuntu') or (os_version.distro == 'debian')
 
     - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname (centos)
+      delegate_to: localhost
       vars:
         vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
       command: virt-customize -q -a "/tmp/{{ vol_name }}.qcow2"
@@ -64,15 +66,15 @@
                               --selinux-relabel
                               --hostname "{{ vm_hostname }}"
       become: true
-      delegate_to: localhost
       when: (os_version.distro == 'centos')
 
     - name: Resize volume
+      delegate_to: localhost
       command: 'qemu-img resize /tmp/{{ vol_name }}.qcow2 {{ ii_vol.value.size }}'
       become: true
-      delegate_to: localhost
 
     - name: Prepare network configuration - Ubuntu netplan
+      delegate_to: localhost
       block:
 
         - name: Create netplan file
@@ -86,23 +88,21 @@
             owner: root
             group: root
             mode: 0644
-          delegate_to: localhost
 
         - name: Copy netplan file to '{{ ii_vm.key }}' server
           become: true
           command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
-          delegate_to: localhost
 
         - name: Remove tmp file
           become: true
           file:
             path: '/tmp/50-cloud-init.yaml'
             state: absent
-          delegate_to: localhost
 
       when: (os_version.distro == 'ubuntu') and (os_version.major_version | int >= 18)
 
     - name: Prepare network configuration - Debian interfaces
+      delegate_to: localhost
       block:
         - name: Create interfaces file
           become: true
@@ -115,65 +115,63 @@
             owner: root
             group: root
             mode: 0644
-          delegate_to: localhost
 
         - name: Copy interfaces file to '{{ ii_vm.key }}' server
           become: true
           command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/interfaces /etc/network'
-          delegate_to: localhost
 
         - name: Remove tmp file
           become: true
           file:
             path: '/tmp/interfaces'
             state: absent
-          delegate_to: localhost
 
       when: ((os_version.distro == 'ubuntu') and (os_version.major_version | int < 18)) or
             (os_version.distro == 'debian')
 
     - name: Prepare network configuration - Centos ifcfg
+      delegate_to: localhost
       block:
 
         - name: Set fact - interfaces list
           set_fact:
-            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            centos_interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
 
         - name: Create ifcfg file
           become: true
           vars:
             index: "{{ ii_index - 1 }}"
-            interface_name: 'eth0'
+            interface_name: 'eth{{ interface.interface_name_id }}'
           template:
             src: 'vm-ifcfg.j2'
             dest: '/tmp/ifcfg-{{ interface_name }}'
             owner: root
             group: root
             mode: 0644
-          delegate_to: localhost
-          loop: "{{ interfaces }}"
+          loop: "{{ centos_interfaces }}"
           loop_control:
             label: "{{ interface.name }}"
             loop_var: interface
 
         - name: Copy ifcfg file to '{{ ii_vm.key }}' server
           vars:
-            interface_name: 'eth0'
+            interface_name: 'eth{{ interface.interface_name_id }}'
           become: true
           command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/ifcfg-{{ interface_name }} /etc/sysconfig/network-scripts'
-          delegate_to: localhost
+          loop: "{{ centos_interfaces }}"
           loop_control:
             label: "{{ interface.name }}"
             loop_var: interface
 
         - name: Remove tmp file
           vars:
-            interface_name: 'eth0'
+            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            interface_name: 'eth{{ interface.interface_name_id }}'
           become: true
           file:
             path: '/tmp/ifcfg-{{ interface_name }}'
             state: absent
-          delegate_to: localhost
+          loop: "{{ interfaces }}"
           loop_control:
             label: "{{ interface.name }}"
             loop_var: interface
@@ -181,6 +179,7 @@
       when: (os_version.distro == 'centos')
 
     - name: Prepare resolv.conf
+      delegate_to: localhost
       block:
 
         - name: Create resolv.conf file
@@ -193,19 +192,16 @@
             owner: root
             group: root
             mode: 0644
-          delegate_to: localhost
 
         - name: Copy resolv.conf file to '{{ ii_vm.key }}' server
           become: true
           command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/resolv.conf /etc'
-          delegate_to: localhost
 
         - name: Remove tmp file
           become: true
           file:
             path: '/tmp/resolv.conf'
             state: absent
-          delegate_to: localhost
 
       when: ((os_version.distro == 'ubuntu') and (os_version.major_version | int < 18)) or
             (os_version.distro == 'debian') or (os_version.distro == 'centos')

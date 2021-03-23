@@ -21,12 +21,14 @@
       ignore_errors: 'yes'
 
   when: (vol_pool.create is defined) and (vol_pool.create | bool) and
+        ((vol_pool.virtualization_host is not defined) or (vol_pool.virtualization_host == inventory_hostname)) and
         (vol_pool.name in poollist.list_pools)
 
 - name: Remove virt-volumes folder
   file:
     path: "{{ vol_pool.path }}"
     state: absent
-  when: (vol_pool.create | bool) and
+  when: (vol_pool.create is defined) and (vol_pool.create | bool) and
+        ((vol_pool.virtualization_host is not defined) or (vol_pool.virtualization_host == inventory_hostname)) and
         folderonplace.stat.exists
   ignore_errors: 'yes'

@@ -3,6 +3,7 @@
 #########################################
 import ipaddress
 
+
 # netint_to_list filter
 # Prepare a list of network interfaces in a form suitable for vm creation
 def netint_to_list(netint_in):
