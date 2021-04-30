@@ -24,6 +24,11 @@ options:
         description: Type of VM
         required: true
         type: str
+    vm_suffix:
+        description: Suffix of a vm name
+        required: false
+        type: str
+        default: "-node"
     network:
         description: network name
         required: true
@@ -75,14 +80,14 @@ def get_mac_of_vm(xmlCtx, networkName):
 
 
 # return list of VMs of vmType
-def get_vm_list(libvirtConn, vmType):
+def get_vm_list(libvirtConn, vmType, vmSuffix):
     vmList = []
     # domains (VMs), which are not running
     domainNamesNotRunning = libvirtConn.listDefinedDomains()
     if domainNamesNotRunning is None:
         raise RuntimeError('Failed to get a list of domain names')
     for domainName in domainNamesNotRunning:
-        if (domainName.startswith(vmType + "-node")):
+        if (domainName.startswith(vmType + vmSuffix)):
             vmList.append(domainName)
 
     # running domains (VMs)
@@ -93,14 +98,14 @@ def get_vm_list(libvirtConn, vmType):
     for domainID in domainIDs:
         domain = libvirtConn.lookupByID(domainID)
         domainName = domain.name()
-        if (domainName.startswith(vmType + "-node")):
+        if (domainName.startswith(vmType + vmSuffix)):
             vmList.append(domainName)
 
     return vmList
 
 
 # return list of VMs and MACs for given network
-def get_mac_list(vmType, network):
+def get_mac_list(vmType, vmSuffix, network):
     macList = []
     # Connect to libvirt
     libvirtConn = libvirt.openReadOnly('qemu:///system')
@@ -108,7 +113,7 @@ def get_mac_list(vmType, network):
         raise RuntimeError('Failed to open connection to the hypervisor')
 
     try:
-        vmList = get_vm_list(libvirtConn, vmType)
+        vmList = get_vm_list(libvirtConn, vmType, vmSuffix)
     except RuntimeError as err:
         raise RuntimeError(str(err))
 
@@ -131,6 +136,7 @@ def run_module():
     # define available arguments/parameters a user can pass to the module and result of the module
     module_args = dict(
         vm_type=dict(type='str', required=True),
+        vm_suffix=dict(type='str', required=False, default='-node'),
         network=dict(type='str', required=True)
     )
 
@@ -146,7 +152,7 @@ def run_module():
 
     # module's body
     try:
-        result['mac_list'] = get_mac_list(module.params['vm_type'], module.params['network'])
+        result['mac_list'] = get_mac_list(module.params['vm_type'], module.params['vm_suffix'], module.params['network'])
     except RuntimeError as err:
         module.fail_json(msg=str(err), **result)
 

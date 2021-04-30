@@ -3,8 +3,10 @@
 # tasks file for creating volumes for vm
 ############################################################
 - name: Set vol_name variable
+  vars:
+    vol_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
   set_fact:
-    vol_name: "{{ ii_vm.key }}-{{ ii_vol.key }}-node{{ ii_index }}"
+    vol_name: "{{ vol_name_pre }}-{{ ii_vol.key }}{{ hostname_suffix }}{{ ii_index }}"
 
 - name: Check if image already exists on target folder
   stat:
@@ -41,7 +43,7 @@
     - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname (ubuntu, debian)
       delegate_to: localhost
       vars:
-        vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
+        vm_hostname: "{{ (domain_name is defined) | ternary(vm_name + '.' + domain_name, vm_name) }}"
       command: virt-customize -q -a "/tmp/{{ vol_name }}.qcow2"
                               --uninstall cloud-init
                               --root-password "password:{{ vm_passwd }}"
@@ -56,7 +58,7 @@
     - name: Set root password, disable cloud init, inject public ssh key, enable ssh server, set hostname (centos)
       delegate_to: localhost
       vars:
-        vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
+        vm_hostname: "{{ (domain_name is defined) | ternary(vm_name + '.' + domain_name, vm_name) }}"
       command: virt-customize -q -a "/tmp/{{ vol_name }}.qcow2"
                               --uninstall cloud-init
                               --root-password "password:{{ vm_passwd }}"
@@ -80,7 +82,7 @@
         - name: Create netplan file
           become: true
           vars:
-            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
             index: "{{ ii_index - 1 }}"
           template:
             src: 'vm-netplan.j2'
@@ -89,7 +91,7 @@
             group: root
             mode: 0644
 
-        - name: Copy netplan file to '{{ ii_vm.key }}' server
+        - name: Copy netplan file to "{{ vm_name }}" server
           become: true
           command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/50-cloud-init.yaml /etc/netplan'
 
@@ -107,7 +109,7 @@
         - name: Create interfaces file
           become: true
           vars:
-            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
             index: "{{ ii_index - 1 }}"
           template:
             src: 'vm-interfaces.j2'
@@ -116,7 +118,7 @@
             group: root
             mode: 0644
 
-        - name: Copy interfaces file to '{{ ii_vm.key }}' server
+        - name: Copy interfaces file to "{{ vm_name }}" server
           become: true
           command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/interfaces /etc/network'
 
@@ -135,7 +137,7 @@
 
         - name: Set fact - interfaces list
           set_fact:
-            centos_interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            centos_interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
 
         - name: Create ifcfg file
           become: true
@@ -153,7 +155,7 @@
             label: "{{ interface.name }}"
             loop_var: interface
 
-        - name: Copy ifcfg file to '{{ ii_vm.key }}' server
+        - name: Copy ifcfg file to "{{ vm_name }}" server
           vars:
             interface_name: 'eth{{ interface.interface_name_id }}'
           become: true
@@ -165,7 +167,7 @@
 
         - name: Remove tmp file
           vars:
-            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
             interface_name: 'eth{{ interface.interface_name_id }}'
           become: true
           file:
@@ -185,7 +187,7 @@
         - name: Create resolv.conf file
           become: true
           vars:
-            interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+            interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
           template:
             src: 'vm-resolv.conf.j2'
             dest: '/tmp/resolv.conf'
@@ -193,7 +195,7 @@
             group: root
             mode: 0644
 
-        - name: Copy resolv.conf file to '{{ ii_vm.key }}' server
+        - name: Copy resolv.conf file to "{{ vm_name }}" server
           become: true
           command: 'virt-copy-in -a /tmp/{{ vol_name }}.qcow2 /tmp/resolv.conf /etc'
 

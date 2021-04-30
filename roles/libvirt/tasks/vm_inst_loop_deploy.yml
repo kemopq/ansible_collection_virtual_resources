@@ -3,12 +3,57 @@
 # tasks file for creating instance of vm type
 ############################################################
 - name: Set vm_name variable
+  vars:
+    vm_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
   set_fact:
-    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+    vm_name: "{{ vm_name_pre }}{{ hostname_suffix }}{{ ii_index }}"
+
+- name: Prepare instance params
+  vars:
+    index: "{{ ii_index - 1 }}"
+    inst_memory_loc:
+      "{{ ii_vm.value.instances[index | int].memory if ii_vm.value.instances[index | int].memory is defined
+          else ii_vm.value.memory }}"
+    inst_vcpu_loc:
+      "{{ ii_vm.value.instances[index | int].vcpu if ii_vm.value.instances[index | int].vcpu is defined
+          else ii_vm.value.vcpu }}"
+    inst_net_interfaces_loc:
+      "{{ ii_vm.value.instances[index | int].net_interfaces if ii_vm.value.instances[index | int].net_interfaces is defined
+          else ii_vm.value.net_interfaces if ii_vm.value.net_interfaces is defined
+          else {} }}"
+    inst_volumes_loc:
+      "{{ ii_vm.value.instances[index | int].volumes if ii_vm.value.instances[index | int].volumes is defined
+          else ii_vm.value.volumes if ii_vm.value.volumes is defined
+          else {} }}"
+  set_fact:
+    inst_memory: "{{ inst_memory_loc }}"
+    inst_vcpu: "{{ inst_vcpu_loc }}"
+    inst_net_interfaces: "{{ inst_net_interfaces_loc }}"
+    inst_net_interfaces_source: "{{ ii_vm.value.instances[index | int].net_interfaces is defined }}"
+    inst_volumes: "{{ inst_volumes_loc }}"
+
+- name: Check if vm instance has at least one network
+  assert:
+    that:
+      - inst_net_interfaces is defined
+      - inst_net_interfaces
+    fail_msg: "VM({{ ii_index }}) has not properly defined networks => no interfaces defined"
+    quiet: 'yes'
+
+- name: Check if vm instance has boot volume
+  vars:
+    vol_key: "boot"
+  assert:
+    that:
+      - inst_volumes is defined
+      - inst_volumes
+      - vol_key in inst_volumes
+    fail_msg: "VM({{ ii_index }}) has not properly defined volumes => no boot volume"
+    quiet: 'yes'
 
 - name: Loop for volumes of vm instance
   include_tasks: vm_vol_loop_deploy.yml
-  loop: "{{ ii_vm.value.volumes | dict2items }}"
+  loop: "{{ inst_volumes | dict2items }}"
   loop_control:
     loop_var: ii_vol
     label: "{{ ii_vol.key }}"
@@ -24,11 +69,11 @@
     - name: Create vm
       vars:
         server_name: "{{ vm_name }}"
-        vmtype_name: "{{ ii_vm.key }}"
-        server_memory_usage: "{{ ii_vm.value.memory }}"
-        server_cpu_usage: "{{ ii_vm.value.vcpu }}"
-        volumes: "{{ ii_vm.value.volumes | kemopq.virtual_resources.volumes_to_list }}"
-        interfaces: "{{ ii_vm.value.net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+        vm_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
+        server_memory_usage: "{{ inst_memory }}"
+        server_cpu_usage: "{{ inst_vcpu }}"
+        volumes: "{{ inst_volumes | kemopq.virtual_resources.volumes_to_list }}"
+        interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
         index: "{{ ii_index }}"
         uefi_loader_string: "<loader readonly='yes' type='pflash'>/usr/share/OVMF/OVMF_CODE.fd</loader>"
         uefi_nvram_string: "<nvram>/var/lib/libvirt/qemu/nvram/ubuntu18.04_VARS.fd</nvram>"
@@ -42,16 +87,17 @@
     - name: Insert vm to /etc/host
       vars:
         index: "{{ ii_index - 1 }}"
-        vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
+        vm_hostname: "{{ (domain_name is defined) | ternary(vm_name + '.' + domain_name, vm_name) }}"
+        ip_address: "{{ inst_net_interfaces_source | ternary(item.value.address_cidr | ipaddr('address'), item.value.address_cidr | next_nth_usable(index | int)) }}"
       lineinfile:
         path: "/etc/hosts"
         regexp: "{{ vm_hostname }}"
-        line: "{{ item.value.address_cidr | next_nth_usable(index | int) }} {{ vm_hostname }}"
+        line: "{{ ip_address }} {{ vm_hostname }}"
       become: true
       delegate_to: localhost
       when: (item.value.include_to_hosts is defined) and (item.value.include_to_hosts | bool) and
             (item.value.address_cidr is defined)
-      loop: "{{ ii_vm.value.net_interfaces | dict2items }}"
+      loop: "{{ inst_net_interfaces | dict2items }}"
       loop_control:
         label: "{{ item.key }}"
 

@@ -3,8 +3,10 @@
 # tasks file for making additional actions on running vm
 ############################################################
 - name: Set vm_name variable
+  vars:
+    vm_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
   set_fact:
-    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+    vm_name: "{{ vm_name_pre }}{{ hostname_suffix }}{{ ii_index }}"
 
 - name: Get OS version
   block:
@@ -22,12 +24,11 @@
       debug:
         msg: "OS version of vm {{ vm_name }} is  {{ os_version }}"
 
-  when: (ii_vm.value.boot_mode == 'image') and
-        (ii_index == 1)
+  when: ii_vm.value.boot_mode == 'image'
 
 - name: Resize volume block
   vars:
-    vm_hostname: "{% if domain_name is defined %}{{ vm_name }}.{{ domain_name }}{% else %}{{ vm_name }}{% endif %}"
+    vm_hostname: "{{ (domain_name is defined) | ternary(vm_name + '.' + domain_name, vm_name) }}"
   delegate_to: "{{ vm_hostname }}"
   remote_user: root
   block:

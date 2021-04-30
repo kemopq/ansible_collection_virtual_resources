@@ -12,7 +12,11 @@ network:
     "{{ interface_name }}":
 {% if interface.address_cidr is defined %}
       dhcp4: no
-      addresses: ["{{ interface.address_cidr | next_nth_usable(index | int ) }}/{{ interface.address_cidr | ipaddr('prefix') }}"]
+{% if inst_net_interfaces_source %}
+      addresses: ["{{ interface.address_cidr }}"]
+{% else %}
+      addresses: ["{{ interface.address_cidr | next_nth_usable(index | int ) }}/{{ interface.network_prefix }}"]
+{% endif %}
 {% else %}
       dhcp4: yes
 {% endif %}

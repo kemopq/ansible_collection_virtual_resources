@@ -3,8 +3,10 @@
 # tasks file for destroying volumes of vms
 ############################################################
 - name: Set vol_name variable
+  vars:
+    vol_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
   set_fact:
-    vol_name: "{{ ii_vm.key }}-{{ ii_vol.key }}-node{{ ii_index }}"
+    vol_name: "{{ vol_name_pre }}-{{ ii_vol.key }}{{ hostname_suffix }}{{ ii_index }}"
 
 - name: Remove volume from pool
   command: "virsh vol-delete --pool {{ vol_pool.name }} {{ vol_name }}.qcow2"

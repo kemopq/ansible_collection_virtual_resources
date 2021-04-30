@@ -15,7 +15,7 @@ virt_networks:
     network_cidr: '192.168.100.0/24'  # network cidr address
     mode: 'nat'                       # [isolated/nat] - libvirt network mode
     create: 'yes'                     # [yes/no] default='no' - 'yes' if network should be created, 'no' if network already exists
-    virtualization_host: 'localhost'  # name of virtualization host, where network will be created; 
+    virtualization_host: 'localhost'  # name of virtualization host, where network will be created;
                                       # if parameter is not defined, network will be created on every host
   os_internal:
     network_cidr: '192.168.110.0/24'
@@ -32,6 +32,7 @@ routing_rools:
 domain_name: "kemopq1.test"                     # domain name for VMs
 ssh_my_pub_key: "/home/ubuntu/.ssh/id_rsa.pub"  # pub key on main host, which will be inserted to VMs for passwordless ssh
 vm_passwd: "mypasswd"                           # root password of VM, created from image
+hostname_suffix: "-node"                        # vm name suffix (default is "-node"
 
 # list of virtual machine's configuration data
 virt_machines:
@@ -72,3 +73,61 @@ virt_machines:
       internal:                            # name of the interface
         network: 'os_internal'             # network, to which interface is connected
         address_cidr: '192.168.110.11/24'  # cidr address of interface (only needed when include_to_hosts is 'yes')
+  nextnode:                                # vm which has properties defined for each instance
+    create: "yes"
+    name: "operationsvmkk"
+    nr_of_nodes: 2
+    boot_mode: 'image'
+    start: 'immediately'
+    volumes:
+      boot:
+        size: "50G"
+        image: "/home/kpog/WORK/downloads/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2"
+    instances:
+      - virtualization_host: "localhost"
+        memory: 2048
+        vcpu: 1
+        volumes:
+          boot:
+            size: "50G"
+            image: "/home/kpog/WORK/downloads/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2"
+          vol2:
+            size: "20G"
+        net_interfaces:
+          public:
+            ext_bridge: "br-main"
+            address_cidr: "172.30.21.44/22"
+            gateway: "172.30.20.1"
+            search_domains:
+              - "kemopq.test"
+            nameservers:
+              - "172.30.21.44"
+              - "10.1.2.3"
+            include_to_hosts: 'yes'
+          internal:
+            network: 'os_internal'
+            address_cidr: "192.168.110.5/24"
+      - virtualization_host: "host2"
+        memory: 3072
+        vcpu: 2
+        volumes:
+          boot:
+            size: "50G"
+            image: "/home/kpog/WORK/downloads/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2"
+          vol2:
+            size: "20G"
+        net_interfaces:
+          public:
+            ext_bridge: "br-main"
+            address_cidr: "172.30.21.44/22"
+            gateway: "172.30.20.1"
+            search_domains:
+              - "kemopq.test"
+            nameservers:
+              - "172.30.21.44"
+              - "10.1.2.3"
+            include_to_hosts: 'yes'
+          internal:
+            network: 'os_internal'
+            address_cidr: "192.168.110.6/24"
+

@@ -3,8 +3,10 @@
 # tasks file for running instance of vm type
 ############################################################
 - name: Set vm_name variable
+  vars:
+    vm_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
   set_fact:
-    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+    vm_name: "{{ vm_name_pre }}{{ hostname_suffix }}{{ ii_index }}"
 
 - name: Check status of VM "{{ vm_name }}"
   virt:

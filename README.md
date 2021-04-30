@@ -1,7 +1,8 @@
 # Ansible collection: kemopq.virtual_resources
 Collection for creating virtual resources (virtual machines, networks, volumes) on different virtualization platforms (currently only libvirt is supported).  
 For virtual machines type and number of instances are defined. VMs are created with names:  
-_<vm_type>-node1, <vm_type>-node2, ..._   
+_<vm_type><vm_suffix>1, <vm_type><vm_suffix>2, ..._ 
+Default <vm_suffix> is "-node"
 Each VM can have several network interfaces and volumes attached. Image can be provided for boot volume (currently only ubuntu18.04 is supported). VM can also boot from network interface (pxe or uefi boot is possible - ovfm package should be installed on main host for uefi boot).  
 Currently supported OS:
 - Ubuntu (tested with Ubuntu18.04)
@@ -40,6 +41,7 @@ Roles and module can be used on your ansible playbook.
     - name: Get MAC list of osnode VMs for os_internal network
       kemopq.virtual_resources.getmac:
         vm_type: 'osnode'
+        vm_suffix: '-node'
         network: 'os_internal'
       register: getmac_result
 

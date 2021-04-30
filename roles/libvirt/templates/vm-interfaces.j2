@@ -17,7 +17,11 @@ iface lo inet loopback
 auto "{{ interface_name }}"
 {% if interface.ip_address is defined %}
 iface "{{ interface_name }}" inet static
+{% if inst_net_interfaces_source %}
+    address "{{ interface.ip_address }}"
+{% else %}
     address "{{ interface.address_cidr | next_nth_usable(index | int ) }}"
+{% endif %}
     netmask "{{ interface.network_netmask }}"
     network "{{ interface.network_address }}"
     broadcast "{{ interface.network_broadcast }}"

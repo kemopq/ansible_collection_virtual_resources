@@ -2,31 +2,19 @@
 ###############################################################
 # tasks file for creating all instances of virtual machine type
 ###############################################################
-- name: Check if vms has at least one network
-  assert:
-    that:
-      - ii_vm.value.net_interfaces is defined
-      - ii_vm.value.net_interfaces
-    fail_msg: "VM has not properly defined networks"
-    quiet: 'yes'
-
-- name: Check if vms has boot volume
-  vars:
-    vol_key: "boot"
-  assert:
-    that:
-      - ii_vm.value.volumes is defined
-      - ii_vm.value.volumes
-      - vol_key in ii_vm.value.volumes
-    fail_msg: "VM has not properly defined volumes"
-    quiet: 'yes'
-
 - name: Check if number of instances > 0
   assert:
     that:
       - ii_vm.value.nr_of_nodes is defined
       - ii_vm.value.nr_of_nodes > 0
-    fail_msg: "VM nr_of_nodes not defined or has incorrect value"
+    fail_msg: "VM({{ ii_vm.key }}) nr_of_nodes not defined or has incorrect value"
+    quiet: 'yes'
+
+- name: Check if instances data are available for all instances
+  assert:
+    that:
+      - (ii_vm.value.instances is not defined) or (ii_vm.value.instances | length == ii_vm.value.nr_of_nodes)
+    fail_msg: "for VM({{ ii_vm.key }}) instances list size is not the same as nr_of_nodes"
     quiet: 'yes'
 
 - name: Loop of all instances of vm
@@ -34,18 +22,26 @@
   loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
   loop_control:
     loop_var: ii_index
-  when: (ii_vm.value.virtualization_host is not defined) or
-        (((ii_vm.value.virtualization_host | type_debug) == 'str') and (ii_vm.value.virtualization_host == inventory_hostname)) or
-        (ii_vm.value.virtualization_host[ii_index - 1] == inventory_hostname)
+  when: (((ii_vm.value.virtualization_host is not defined) and
+          (ii_vm.value.instances[ii_index - 1].virtualization_host is not defined)) or
+         ((ii_vm.value.instances[ii_index - 1].virtualization_host is defined) and
+          (ii_vm.value.instances[ii_index - 1].virtualization_host == inventory_hostname)) or
+         ((ii_vm.value.instances[ii_index - 1].virtualization_host is not defined) and
+          (ii_vm.value.virtualization_host is defined) and
+          (ii_vm.value.virtualization_host == inventory_hostname)))
 
 - name: Loop of all instances of vm for starting vm
   include_tasks: vm_inst_loop_vmstart.yml
   loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
   loop_control:
     loop_var: ii_index
-  when: ((ii_vm.value.virtualization_host is not defined) or
-        (((ii_vm.value.virtualization_host | type_debug) == 'str') and (ii_vm.value.virtualization_host == inventory_hostname)) or
-        (ii_vm.value.virtualization_host[ii_index - 1] == inventory_hostname)) and
+  when: (((ii_vm.value.virtualization_host is not defined) and
+          (ii_vm.value.instances[ii_index - 1].virtualization_host is not defined)) or
+         ((ii_vm.value.instances[ii_index - 1].virtualization_host is defined) and
+          (ii_vm.value.instances[ii_index - 1].virtualization_host == inventory_hostname)) or
+         ((ii_vm.value.instances[ii_index - 1].virtualization_host is not defined) and
+          (ii_vm.value.virtualization_host is defined) and
+          (ii_vm.value.virtualization_host == inventory_hostname))) and
         (ii_vm.value.start == 'immediately')
 
 - name: Loop of all instances of vm for making additional actions
@@ -53,7 +49,11 @@
   loop: "{{ range(1, ii_vm.value.nr_of_nodes + 1) | list }}"
   loop_control:
     loop_var: ii_index
-  when: ((ii_vm.value.virtualization_host is not defined) or
-        (((ii_vm.value.virtualization_host | type_debug) == 'str') and (ii_vm.value.virtualization_host == inventory_hostname)) or
-        (ii_vm.value.virtualization_host[ii_index - 1] == inventory_hostname)) and
+  when: (((ii_vm.value.virtualization_host is not defined) and
+          (ii_vm.value.instances[ii_index - 1].virtualization_host is not defined)) or
+         ((ii_vm.value.instances[ii_index - 1].virtualization_host is defined) and
+          (ii_vm.value.instances[ii_index - 1].virtualization_host == inventory_hostname)) or
+         ((ii_vm.value.instances[ii_index - 1].virtualization_host is not defined) and
+          (ii_vm.value.virtualization_host is defined) and
+          (ii_vm.value.virtualization_host == inventory_hostname))) and
         (ii_vm.value.start == 'immediately')

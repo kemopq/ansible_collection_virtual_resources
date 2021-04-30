@@ -3,7 +3,11 @@ TYPE=Ethernet
 ONBOOT=yes
 {% if interface.ip_address is defined %}
 BOOTPROTO=none
+{% if inst_net_interfaces_source %}
+IPADDR="{{ interface.ip_address[index | int] }}"
+{% else %}
 IPADDR="{{ interface.address_cidr | next_nth_usable(index | int ) }}"
+{% endif %}
 PREFIX="{{ interface.network_prefix }}"
 {% if interface.gateway is defined %}
 GATEWAY="{{ interface.gateway }}"

@@ -3,8 +3,20 @@
 # tasks file for destroying instance of vm type
 ############################################################
 - name: Set vm_name variable
+  vars:
+    vm_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
   set_fact:
-    vm_name: "{{ ii_vm.key }}-node{{ ii_index }}"
+    vm_name: "{{ vm_name_pre }}{{ hostname_suffix }}{{ ii_index }}"
+
+- name: Prepare instance params
+  vars:
+    index: "{{ ii_index - 1 }}"
+    inst_volumes_loc:
+      "{{ ii_vm.value.instances[index | int].volumes if ii_vm.value.instances[index | int].volumes is defined
+          else ii_vm.value.volumes if ii_vm.value.volumes is defined
+          else {} }}"
+  set_fact:
+    inst_volumes: "{{ inst_volumes_loc }}"
 
 - name: Destroy vm block
   block:
@@ -39,7 +51,7 @@
 
 - name: Loop for volumes of vm instance
   include_tasks: vm_vol_loop_destroy.yml
-  loop: "{{ ii_vm.value.volumes | dict2items }}"
+  loop: "{{ inst_volumes | dict2items }}"
   loop_control:
     loop_var: ii_vol
     label: "{{ ii_vol.key }}"
