@@ -63,5 +63,7 @@
   ignore_errors: 'yes'
 
 - name: Remove previous key from authorized keys
-  command: ssh-keygen -R "{{ vm_name }}"
+  vars:
+    vm_hostname: "{{ (domain_name is defined) | ternary(vm_name + '.' + domain_name, vm_name) }}"
+  command: ssh-keygen -R "{{ vm_hostname }}"
   ignore_errors: 'yes'

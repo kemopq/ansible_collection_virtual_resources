@@ -36,7 +36,7 @@
     - name: Wait for server to become active
       wait_for_connection:
         delay: 1
-        timeout: 60
+        timeout: 100
 
     - name: Resize volume (ubuntu, debian)
       shell: "growpart /dev/vda 1; resize2fs /dev/vda1"
