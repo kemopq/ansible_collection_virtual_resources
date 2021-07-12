@@ -24,10 +24,13 @@
           kemopq.virtual_resources.get_os_version:
             image_path: "{{ ii_vol.value.image }}"
           register: get_os_version_result
+          when: ii_vol.value.os_version is not defined
 
         - name: Set fact OS version
+          vars:
+            os_version_tmp: "{{ ii_vol.value.os_version is defined | ternary( ii_vol.value.os_version, get_os_version_result.os_version) }}"
           set_fact:
-            os_version: "{{ get_os_version_result.os_version }}"
+            os_version: "{{ os_version_tmp }}"
 
         - name: Print OS version of image
           debug:

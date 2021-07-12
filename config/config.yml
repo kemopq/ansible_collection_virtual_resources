@@ -53,7 +53,8 @@ virt_machines:
       boot:                                # boot volume
         size: '200G'                       # size of boot volume
         image: '/home/ubuntu/img/ubuntu-18.04-server-cloudimg-1.0.0-amd64.qcow2'  # path to image (needed when boot_mode = 'image'),
-                                                                                  # currently only ubuntu18.04 is supported
+                                                                                  # currently ubuntu18.04, Centos7 and debian9.9 are supported
+        os_version: "{'distro': 'ubuntu', 'major_version': '18'}"                 # optional argument (needed only on Centos virtualization host)
       ceph:                                # add volume
         size: '50G'                        # size of add volume
     net_interfaces:                        # list of network interfaces of VM
