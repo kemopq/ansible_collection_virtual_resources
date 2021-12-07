@@ -46,6 +46,27 @@
       shell: "growpart /dev/vda 1; xfs_growfs /dev/vda1"
       when: (os_version.distro == 'centos')
 
+    - name: Activate PasswordAuthentication
+      vars:
+        pass_auth_option: "{% if (ii_vm.value.ssh_password_auth is defined) and (ii_vm.value.ssh_password_auth == 'yes') %}yes{% else %}no{% endif %}"
+      lineinfile:
+        path: "/etc/ssh/sshd_config"
+        line: "PasswordAuthentication {{ pass_auth_option }}"
+        state: present
+
+    - name: Ensure PasswordAuthentication is activated
+      vars:
+        pass_auth_reverse_option: "{% if (ii_vm.value.ssh_password_auth is defined) and (ii_vm.value.ssh_password_auth == 'yes') %}no{% else %}yes{% endif %}"
+      lineinfile:
+        path: "/etc/ssh/sshd_config"
+        line: "PasswordAuthentication {{ pass_auth_reverse_option }}"
+        state: absent
+
+    - name: Restart service sshd
+      service:
+        name: sshd
+        state: restarted
+
   when: (ii_vm.value.boot_mode == 'image') and
         (vm_status_fact is defined) and
         (vm_status_fact == 'shutdown')

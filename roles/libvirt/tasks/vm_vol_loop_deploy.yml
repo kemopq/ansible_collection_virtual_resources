@@ -82,6 +82,13 @@
       delegate_to: localhost
       block:
 
+        - name: List of interfaces - DEBUG
+          vars:
+            interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+          debug:
+            var: interfaces
+          when: false  # enable when debugging
+
         - name: Create netplan file
           become: true
           vars:
@@ -103,6 +110,7 @@
           file:
             path: '/tmp/50-cloud-init.yaml'
             state: absent
+            #          when: false # disable when debugging
 
       when: (os_version.distro == 'ubuntu') and (os_version.major_version | int >= 18)
 

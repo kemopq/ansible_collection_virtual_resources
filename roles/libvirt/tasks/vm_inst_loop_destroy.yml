@@ -47,6 +47,16 @@
       when: ii_vm.value.boot_mode == 'uefi'
       ignore_errors: 'yes'
 
+    - name: Remove vm from /etc/host
+      vars:
+        vm_hostname: "{{ (domain_name is defined) | ternary(vm_name + '.' + domain_name, vm_name) }}"
+      lineinfile:
+        path: "/etc/hosts"
+        regexp: "{{ vm_hostname }}"
+        state: absent
+      become: true
+      delegate_to: localhost
+
   when: vm_name in vm_list
 
 - name: Loop for volumes of vm instance

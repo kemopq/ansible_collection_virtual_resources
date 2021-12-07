@@ -66,6 +66,32 @@
 - name: Create vm block
   block:
 
+    - name: List of interfaces - DEBUG
+      vars:
+        interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+      debug:
+        var: interfaces
+      when: false  # enable when debugging
+
+    - name: Create vm - DEBUG
+      vars:
+        server_name: "{{ vm_name }}"
+        vm_name_pre: "{{ (ii_vm.value.name is defined) | ternary(ii_vm.value.name, ii_vm.key) }}"
+        server_memory_usage: "{{ inst_memory }}"
+        server_cpu_usage: "{{ inst_vcpu }}"
+        volumes: "{{ inst_volumes | kemopq.virtual_resources.volumes_to_list }}"
+        interfaces: "{{ inst_net_interfaces | kemopq.virtual_resources.netint_to_list }}"
+        index: "{{ ii_index }}"
+        uefi_loader_string: "<loader readonly='yes' type='pflash'>/usr/share/OVMF/OVMF_CODE.fd</loader>"
+        uefi_nvram_string: "<nvram>/var/lib/libvirt/qemu/nvram/ubuntu18.04_VARS.fd</nvram>"
+        uefi_loader: "{{ (ii_vm.value.boot_mode == 'uefi') | ternary(uefi_loader_string,'') }}"
+        uefi_nvram: "{{ (ii_vm.value.boot_mode == 'uefi') | ternary(uefi_nvram_string,'') }}"
+      template:
+        src: vm-libvirt.xml.j2
+        dest: /tmp/osnode-libvirt.xml
+        mode: '0644'
+      when: false  # enable when debugging
+
     - name: Create vm
       vars:
         server_name: "{{ vm_name }}"
@@ -83,6 +109,7 @@
         name: "{{ vm_name }}"
         command: define
         xml: "{{ lookup('template', 'vm-libvirt.xml.j2') }}"
+        autostart: "{{ ii_vm.value.autostart }}"
 
     - name: Insert vm to /etc/host
       vars:

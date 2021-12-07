@@ -1,6 +1,6 @@
-#########################################
-# hello_world collection's filter plugins
-#########################################
+#################################################
+# virtual_collection collection's filter plugins
+#################################################
 import ipaddress
 
 
@@ -30,8 +30,8 @@ def netint_to_list(netint_in):
             net_info['network_broadcast'] = str(network.broadcast_address)
             net_info['network_netmask'] = str(network.netmask)
             net_info['network_prefix'] = str(network.prefixlen)
-        if ('interface_name' in netint_data.keys()):
-            net_info['interface_name'] = netint_data['interface_name']
+        if ('interface_name_id' in netint_data.keys()):
+            net_info['interface_name_id'] = netint_data['interface_name_id']
         else:
             net_info['interface_name_id'] = str(ii)
             ii += 1
@@ -42,8 +42,8 @@ def netint_to_list(netint_in):
         if ('search_domains' in netint_data.keys()):
             net_info['search_domains'] = netint_data['search_domains']
         netint_out.append(net_info)
-    # print(netint_out)
-    return netint_out
+    # print(sorted(netint_out, key=lambda i: i['interface_name_id']))
+    return sorted(netint_out, key=lambda i: i['interface_name_id'])
 
 
 # volume_to_list filter
@@ -66,8 +66,8 @@ def volumes_to_list(volumes_in):
             volumes_out.insert(0, vol_info)
         else:
             volumes_out.append(vol_info)
-    # print(volumes_out)
-    return volumes_out
+    # print(sorted(volumes_out, key=lambda i: i['dev']))
+    return sorted(volumes_out, key=lambda i: i['dev'])
 
 
 # filter module

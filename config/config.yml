@@ -49,6 +49,7 @@ virt_machines:
     vcpu: 2                                # virtual cpus
     boot_mode: 'image'                     # [image/pxe/uefi] - 'image' image is provided for boot volume, 'pxe'/'uefi' pxe/uefi boot on net interface
     start: 'later'                         # [immediately/later] - start of VM immediately after creation or later, when mkaction = vmstart
+    autostart: 'no'                        # autostart flag (automatic start of VM after host reboot)
     volumes:                               # list of volumes attached to VM
       boot:                                # boot volume
         size: '200G'                       # size of boot volume
@@ -80,6 +81,7 @@ virt_machines:
     nr_of_nodes: 2
     boot_mode: 'image'
     start: 'immediately'
+    autostart: 'yes'
     volumes:
       boot:
         size: "50G"
